@@ -21,9 +21,9 @@ public class Controlador {
         return instancia;
     }
 
-    public boolean iniciarSesion(String nombreUsuario, String contraseña) {
+    public boolean iniciarSesion(String nombreUsuario, String password) {
         if (usuariosSimulados.containsKey(nombreUsuario) && 
-            usuariosSimulados.get(nombreUsuario).equals(contraseña)) {
+            usuariosSimulados.get(nombreUsuario).equals(password)) {
             usuarioActual = nombreUsuario;
             return true;
         }

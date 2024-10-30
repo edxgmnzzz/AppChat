@@ -9,7 +9,7 @@ import main.java.umu.tds.app.AppChat.Controlador;
 public class VentanaLogin extends JFrame {
     private static final long serialVersionUID = 1L;
     private JTextField campoUsuario;
-    private JPasswordField campoContraseña;
+    private JPasswordField campoPassword;
     private int xMouse, yMouse;
     private Controlador controlador;
 
@@ -56,7 +56,7 @@ public class VentanaLogin extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
 
         campoUsuario = crearCampoTextoPersonalizado(colorPrincipal, colorSecundario, colorPrincipal);
-        campoContraseña = crearCampoContraseñaPersonalizado(colorPrincipal, colorSecundario, colorPrincipal);
+        campoPassword = crearCampoPasswordPersonalizado(colorPrincipal, colorSecundario, colorPrincipal);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -71,18 +71,18 @@ public class VentanaLogin extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.anchor = GridBagConstraints.WEST;
-        panelCampos.add(crearLabel("Contraseña:", 14, colorSecundario), gbc);
+        panelCampos.add(crearLabel("Password:", 14, colorSecundario), gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 1;
         gbc.anchor = GridBagConstraints.EAST;
-        panelCampos.add(campoContraseña, gbc);
+        panelCampos.add(campoPassword, gbc);
 
         panelContenido.add(panelCampos);
 
         panelContenido.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JButton botonLogin = crearBotonPersonalizado("Iniciar Sesión", e -> iniciarSesion(), 
+        JButton botonLogin = crearBotonPersonalizado("Iniciar sesi�n", e -> iniciarSesion(), 
             Color.RED, Color.WHITE, new Color(192, 57, 43));
         botonLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelContenido.add(botonLogin);
@@ -125,7 +125,7 @@ public class VentanaLogin extends JFrame {
         return campo;
     }
 
-    private JPasswordField crearCampoContraseñaPersonalizado(Color colorTexto, Color colorFondo, Color colorBorde) {
+    private JPasswordField crearCampoPasswordPersonalizado(Color colorTexto, Color colorFondo, Color colorBorde) {
         JPasswordField campo = new JPasswordField(15);
         campo.setFont(new Font("Arial", Font.PLAIN, 14));
         campo.setForeground(colorTexto);
@@ -179,22 +179,22 @@ public class VentanaLogin extends JFrame {
         return boton;
     }
 
-    private JLabel crearLabel(String texto, int tamaño, Color color) {
+    private JLabel crearLabel(String texto, int size, Color color) {
         JLabel label = new JLabel(texto, JLabel.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, tamaño));
+        label.setFont(new Font("Arial", Font.BOLD, size));
         label.setForeground(color);
         return label;
     }
 
     private void iniciarSesion() {
         String nombreUsuario = campoUsuario.getText();
-        String contraseña = new String(campoContraseña.getPassword());
+        String Password = new String(campoPassword.getPassword());
         
-        if (controlador.iniciarSesion(nombreUsuario, contraseña)) {
-            JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
+        if (controlador.iniciarSesion(nombreUsuario, Password)) {
+            JOptionPane.showMessageDialog(this, "Inicio de sesi�n exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
             abrirVentanaPrincipal();
         } else {
-            JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error de login", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Usuario o Password incorrectos", "Error de login", JOptionPane.ERROR_MESSAGE);
         }
     }
 
