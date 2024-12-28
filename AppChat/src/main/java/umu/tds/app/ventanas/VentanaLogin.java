@@ -19,7 +19,7 @@ public class VentanaLogin extends JFrame {
     private final Color colorAcento = new Color(231, 76, 60);
 
     public VentanaLogin() {
-    	controlador = Controlador.getInstancia();
+        controlador = Controlador.getInstancia();
         configurarVentana();
         crearComponentes();
     }
@@ -82,7 +82,7 @@ public class VentanaLogin extends JFrame {
 
         panelContenido.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JButton botonLogin = crearBotonPersonalizado("Iniciar sesi�n", e -> iniciarSesion(), 
+        JButton botonLogin = crearBotonPersonalizado("Iniciar sesión", e -> iniciarSesion(),
             Color.RED, Color.WHITE, new Color(192, 57, 43));
         botonLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelContenido.add(botonLogin);
@@ -191,7 +191,7 @@ public class VentanaLogin extends JFrame {
         String Password = new String(campoPassword.getPassword());
         
         if (controlador.iniciarSesion(nombreUsuario, Password)) {
-            JOptionPane.showMessageDialog(this, "Inicio de sesi�n exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
             abrirVentanaPrincipal();
         } else {
             JOptionPane.showMessageDialog(this, "Usuario o Password incorrectos", "Error de login", JOptionPane.ERROR_MESSAGE);

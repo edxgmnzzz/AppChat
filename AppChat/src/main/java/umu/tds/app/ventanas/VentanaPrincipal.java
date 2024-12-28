@@ -4,25 +4,21 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.List;
+import main.java.umu.tds.app.AppChat.Controlador;
 
 public class VentanaPrincipal extends JFrame {
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private JPanel panelContactos;
+    private static final long serialVersionUID = 1L;
+    private JPanel panelContactos;
     private JPanel panelChat;
     private JTextField campoMensaje;
     private JTextArea areaMensajes;
-    private List<String> contactos;
     private String contactoActual;
+    private Controlador controlador;
 
     public VentanaPrincipal() {
+        controlador = Controlador.getInstancia();
         configurarVentana();
         inicializarComponentes();
-        configurarEventos();
     }
 
     private void configurarVentana() {
@@ -33,18 +29,16 @@ public class VentanaPrincipal extends JFrame {
     }
 
     private void inicializarComponentes() {
-        // Panel principal con BorderLayout
         JPanel panelPrincipal = new JPanel(new BorderLayout());
-        
+
         // Panel de contactos (izquierda)
-        panelContactos = new JPanel(new GridLayout(0, 1, 0, 0)); // Cambiado a GridLayout
-        panelContactos.setBorder(new EmptyBorder(0, 0, 0, 0)); // Eliminado el padding
+        panelContactos = new JPanel(new GridLayout(0, 1, 0, 0)); // Manteniendo GridLayout
+        panelContactos.setBorder(new EmptyBorder(0, 0, 0, 0)); // Sin padding
         JScrollPane scrollContactos = new JScrollPane(panelContactos);
         scrollContactos.setPreferredSize(new Dimension(200, 0));
-        
+
         // Simulamos una lista de contactos
-        contactos = new ArrayList<>(List.of("Oscar", "Javi", "Lucia", "Gloria"));
-        for (String contacto : contactos) {
+        for (String contacto : controlador.obtenerContactos()) {
             JButton btnContacto = new JButton(contacto);
             btnContacto.setHorizontalAlignment(SwingConstants.LEFT);
             btnContacto.setBorderPainted(false);
@@ -55,10 +49,10 @@ public class VentanaPrincipal extends JFrame {
             btnContacto.addActionListener(e -> cambiarChat(contacto));
             btnContacto.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent evt) {
-                    btnContacto.setBackground(new Color(230, 230, 230));
+                    btnContacto.setBackground(new Color(230, 230, 230)); // Cambio de color al pasar el mouse
                 }
                 public void mouseExited(MouseEvent evt) {
-                    btnContacto.setBackground(Color.WHITE);
+                    btnContacto.setBackground(Color.WHITE); // Restaurar color
                 }
             });
             panelContactos.add(btnContacto);
@@ -67,11 +61,11 @@ public class VentanaPrincipal extends JFrame {
         // Panel de chat (derecha)
         panelChat = new JPanel(new BorderLayout());
         panelChat.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
+
         areaMensajes = new JTextArea();
         areaMensajes.setEditable(false);
         JScrollPane scrollMensajes = new JScrollPane(areaMensajes);
-        
+
         campoMensaje = new JTextField();
         JButton btnEnviar = new JButton("Enviar");
         btnEnviar.addActionListener(e -> enviarMensaje());
@@ -83,20 +77,21 @@ public class VentanaPrincipal extends JFrame {
         panelChat.add(scrollMensajes, BorderLayout.CENTER);
         panelChat.add(panelEnvio, BorderLayout.SOUTH);
 
-        // Agregar componentes al panel principal
         panelPrincipal.add(scrollContactos, BorderLayout.WEST);
         panelPrincipal.add(panelChat, BorderLayout.CENTER);
 
         setContentPane(panelPrincipal);
-    }
-    private void configurarEventos() {
-        campoMensaje.addActionListener(e -> enviarMensaje());
     }
 
     private void cambiarChat(String contacto) {
         contactoActual = contacto;
         areaMensajes.setText(""); // Limpiar mensajes anteriores
         areaMensajes.append("Chat con " + contacto + "\n\n");
+        
+        // Cargar los mensajes previos con este contacto
+        for (String mensaje : controlador.obtenerMensajes(contacto)) {
+            areaMensajes.append(mensaje + "\n");
+        }
     }
 
     private void enviarMensaje() {
@@ -104,22 +99,23 @@ public class VentanaPrincipal extends JFrame {
         if (!mensaje.isEmpty() && contactoActual != null) {
             areaMensajes.append("Tú: " + mensaje + "\n");
             campoMensaje.setText(""); // Limpiar campo de mensaje
-            
-            // Simular respuesta después de un breve retraso
+
+            // Enviar el mensaje al controlador
+            controlador.enviarMensaje(contactoActual, mensaje);
+
+            // Simular respuesta automática después de un breve retraso
             Timer timer = new Timer(1000, e -> {
-                areaMensajes.append(contactoActual + ": Gracias.\n");
+                String respuesta = controlador.obtenerRespuesta(contactoActual);
+                areaMensajes.append(contactoActual + ": " + respuesta + "\n");
             });
             timer.setRepeats(false);
             timer.start();
         }
     }
-    /**
-     * Método principal que lanza la aplicación.
-     */
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             VentanaPrincipal ventana = new VentanaPrincipal();
-            ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             ventana.setVisible(true);
         });
     }
