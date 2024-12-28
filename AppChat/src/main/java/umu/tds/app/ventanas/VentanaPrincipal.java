@@ -5,6 +5,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import main.java.umu.tds.app.AppChat.Controlador;
+import tds.BubbleText;
 
 public class VentanaPrincipal extends JFrame {
     private static final long serialVersionUID = 1L;
