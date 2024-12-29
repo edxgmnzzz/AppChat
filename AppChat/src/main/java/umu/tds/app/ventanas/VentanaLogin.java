@@ -1,10 +1,11 @@
-package main.java.umu.tds.app.ventanas;
+package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import umu.tds.app.AppChat.Controlador;
+
 import java.awt.*;
 import java.awt.event.*;
-import main.java.umu.tds.app.AppChat.Controlador;
 
 public class VentanaLogin extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -87,11 +88,27 @@ public class VentanaLogin extends JFrame {
         botonLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelContenido.add(botonLogin);
 
+        // Botón de registrar
+        JButton botonRegistrar = crearBotonPersonalizado("Registrar", e -> abrirVentanaRegistro(),
+            colorAcento, Color.WHITE, new Color(231, 76, 60));
+        botonRegistrar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panelContenido.add(botonRegistrar);
+
         panelPrincipal.add(panelContenido, BorderLayout.CENTER);
         add(panelPrincipal);
     }
 
-    private JPanel crearBarraTitulo() {
+    
+    
+    private void abrirVentanaRegistro() {
+        SwingUtilities.invokeLater(() -> {
+            this.dispose(); // Cerramos la ventana de login
+            VentanaRegistro ventanaRegistro = new VentanaRegistro();
+            ventanaRegistro.setVisible(true);
+        });
+    }
+
+	private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(colorPrincipal);
         barraTitulo.setPreferredSize(new Dimension(400, 30));
@@ -205,6 +222,7 @@ public class VentanaLogin extends JFrame {
             ventanaPrincipal.setVisible(true);
         });
     }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             VentanaLogin ventana = new VentanaLogin();
