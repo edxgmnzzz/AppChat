@@ -12,7 +12,14 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
             <artifactId>chatWindowLib</artifactId>
             <version>1.1</version>
         </dependency>
+        <dependency>
+    <groupId>com.toedter</groupId>
+    <artifactId>jcalendar</artifactId>
+    <version>1.4</version>
+</dependency>
+
     </dependencies>
+    
 
  <build>
     <plugins>
