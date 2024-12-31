@@ -56,8 +56,8 @@ public class VentanaLogin extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
 
-        campoUsuario = crearCampoTextoPersonalizado(colorPrincipal, colorSecundario, colorPrincipal);
-        campoPassword = crearCampoPasswordPersonalizado(colorPrincipal, colorSecundario, colorPrincipal);
+        campoUsuario = crearCampoTexto(colorPrincipal, colorSecundario, colorPrincipal);
+        campoPassword = crearCampoPassword(colorPrincipal, colorSecundario, colorPrincipal);
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -83,13 +83,13 @@ public class VentanaLogin extends JFrame {
 
         panelContenido.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JButton botonLogin = crearBotonPersonalizado("Iniciar sesión", e -> iniciarSesion(),
+        JButton botonLogin = crearBoton("Iniciar sesión", e -> iniciarSesion(),
             Color.RED, Color.WHITE, new Color(192, 57, 43));
         botonLogin.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelContenido.add(botonLogin);
 
         // Botón de registrar
-        JButton botonRegistrar = crearBotonPersonalizado("Registrar", e -> abrirVentanaRegistro(),
+        JButton botonRegistrar = crearBoton("Registrar", e -> abrirVentanaRegistro(),
             colorAcento, Color.WHITE, new Color(231, 76, 60));
         botonRegistrar.setAlignmentX(Component.CENTER_ALIGNMENT);
         panelContenido.add(botonRegistrar);
@@ -133,7 +133,7 @@ public class VentanaLogin extends JFrame {
         return barraTitulo;
     }
 
-    private JTextField crearCampoTextoPersonalizado(Color colorTexto, Color colorFondo, Color colorBorde) {
+    private JTextField crearCampoTexto(Color colorTexto, Color colorFondo, Color colorBorde) {
         JTextField campo = new JTextField(15);
         campo.setFont(new Font("Arial", Font.PLAIN, 14));
         campo.setForeground(colorTexto);
@@ -142,7 +142,7 @@ public class VentanaLogin extends JFrame {
         return campo;
     }
 
-    private JPasswordField crearCampoPasswordPersonalizado(Color colorTexto, Color colorFondo, Color colorBorde) {
+    private JPasswordField crearCampoPassword(Color colorTexto, Color colorFondo, Color colorBorde) {
         JPasswordField campo = new JPasswordField(15);
         campo.setFont(new Font("Arial", Font.PLAIN, 14));
         campo.setForeground(colorTexto);
@@ -167,7 +167,7 @@ public class VentanaLogin extends JFrame {
         return boton;
     }
 
-    private JButton crearBotonPersonalizado(String texto, ActionListener accion, Color colorFondo, Color colorTexto, Color colorHover) {
+    private JButton crearBoton(String texto, ActionListener accion, Color colorFondo, Color colorTexto, Color colorHover) {
         JButton boton = new JButton(texto) {
             private static final long serialVersionUID = 1L;
 
