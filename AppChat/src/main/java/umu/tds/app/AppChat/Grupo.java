@@ -1,183 +1,197 @@
 package umu.tds.app.AppChat;
 
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.swing.ImageIcon;
 
+/**
+ * Clase que representa un grupo de chat en la aplicación de mensajería.
+ * Extiende de la clase Contacto y gestiona las funcionalidades específicas
+ * de los grupos como sus integrantes y administrador.
+ */
 public class Grupo extends Contacto {
-	// Properties
-	public static final String GROUP_ICON_PATH = "/umu/tds/app/recursos/grupo.png";
+    /** Ruta del icono predeterminado para grupos */
+    public static final String GROUP_ICON_PATH = "/umu/tds/app/recursos/grupo.png";
 
-	private List<ContactoIndividual> integrantes;
-	private Usuario admin;
+    /** Lista de contactos individuales que conforman el grupo */
+    private List<ContactoIndividual> integrantes;
+    
+    /** Usuario administrador del grupo */
+    private Usuario admin;
 
-	// Constructor.
-	/**
-	 * Constructor de la clase grupo
-	 * 
-	 * @param nombre    Nombre del grupo
-	 * @param Contactos Participantes del grupo
-	 * @param admin     Usuario admin del grupo
-	 */
-	public Grupo(String nombre, List<ContactoIndividual> Contactos, Usuario admin) {
-		super(nombre);
-		this.integrantes = Contactos;
-		this.admin = admin;
-	}
+    /**
+     * Crea un nuevo grupo con nombre, lista de participantes y administrador.
+     *
+     * @param nombre     Nombre identificativo del grupo
+     * @param contactos  Lista de participantes iniciales del grupo
+     * @param admin      Usuario que administrará el grupo
+     */
+    public Grupo(String nombre, List<ContactoIndividual> contactos, Usuario admin) {
+        super(nombre);
+        this.integrantes = contactos;
+        this.admin = admin;
+    }
 
-	/**
-	 * Constructor sobrecargado de la clase grupo
-	 * 
-	 * @param nombre    Nombre del grupo
-	 * @param mensajes  Mensajes intercambiados en el grupo
-	 * @param Contactos Participantes del grupo
-	 * @param admin     Usuario admin del grupo
-	 */
-	public Grupo(String nombre, List<Mensaje> mensajes, List<ContactoIndividual> Contactos, Usuario admin) {
-		super(nombre, mensajes);
-		this.integrantes = Contactos;
-		this.admin = admin;
-	}
+    /**
+     * Crea un nuevo grupo con historial de mensajes inicial.
+     *
+     * @param nombre     Nombre identificativo del grupo
+     * @param mensajes   Lista inicial de mensajes del grupo
+     * @param contactos  Lista de participantes iniciales del grupo
+     * @param admin      Usuario que administrará el grupo
+     */
+    public Grupo(String nombre, List<Mensaje> mensajes, List<ContactoIndividual> contactos, Usuario admin) {
+        super(nombre, mensajes);
+        this.integrantes = contactos;
+        this.admin = admin;
+    }
 
-	// Getters
-	/**
-	 * Devuelve los participantes del grupo
-	 * 
-	 * @return Lista con los participantes del grupo
-	 */
-	public List<ContactoIndividual> getParticipantes() {
-		return integrantes;
-	}
+    /**
+     * Obtiene la lista de participantes actuales del grupo.
+     *
+     * @return Lista de contactos individuales que son miembros del grupo
+     */
+    public List<ContactoIndividual> getParticipantes() {
+        return integrantes;
+    }
 
-	/**
-	 * Devuelvo el usuario administrador del grupo
-	 * 
-	 * @return Usuario administrador del grupo
-	 */
-	public Usuario getAdmin() {
-		return admin;
-	}
+    /**
+     * Obtiene el usuario administrador actual del grupo.
+     *
+     * @return Usuario que administra el grupo
+     */
+    public Usuario getAdmin() {
+        return admin;
+    }
 
-	/**
-	 * Devuelve la foto de perfil del grupo
-	 * 
-	 * @return Imagen de perfil del grupo
-	 */
-	@Override
-	public ImageIcon getFoto() {
-		ImageIcon imagen = new ImageIcon(Grupo.class.getResource(GROUP_ICON_PATH));
-		imagen.setDescription(GROUP_ICON_PATH);
-		return imagen;
-	}
+    /**
+     * Obtiene el icono predeterminado del grupo.
+     *
+     * @return Imagen que representa al grupo en la interfaz
+     */
+    @Override
+    public ImageIcon getFoto() {
+        ImageIcon imagen = new ImageIcon(Grupo.class.getResource(GROUP_ICON_PATH));
+        imagen.setDescription(GROUP_ICON_PATH);
+        return imagen;
+    }
 
-	// Methods
-	/**
-	 * Añade un nuevo integrante del grupo
-	 * 
-	 * @param c Contactoo a añadir al grupo
-	 */
-	public void addIntegrante(ContactoIndividual c) {
-		integrantes.add(c);
-	}
+    /**
+     * Incorpora un nuevo participante al grupo.
+     *
+     * @param contacto Contacto individual a añadir como miembro
+     */
+    public void addIntegrante(ContactoIndividual contacto) {
+        integrantes.add(contacto);
+    }
 
-	/**
-	 * Cambia el admin del grupo
-	 * 
-	 * @param u Usuario que será el nuevo admin
-	 */
-	public void cambiarAdmin(Usuario u) {
-		admin = u;
-	}
+    /**
+     * Modifica el administrador del grupo.
+     *
+     * @param usuario Nuevo usuario que será administrador
+     */
+    public void cambiarAdmin(Usuario usuario) {
+        admin = usuario;
+    }
 
-	/**
-	 * Insertar integrantes para el grupo
-	 * 
-	 * @param Contactos Lista de Contactos que serán los participantes del grupo
-	 */
-	public void setIntegrantes(List<ContactoIndividual> Contactos) {
-		this.integrantes = Contactos;
-	}
+    /**
+     * Actualiza la lista completa de integrantes del grupo.
+     *
+     * @param contactos Nueva lista de participantes que reemplazará a la actual
+     */
+    public void setIntegrantes(List<ContactoIndividual> contactos) {
+        this.integrantes = contactos;
+    }
 
-	/**
-	 * Devuelve los mensajes que han enviado el resto de usuarios por el grupo. El
-	 * valor del parametro pasado como parámetro no importa
-	 * 
-	 * @param emptyOpt Usuario opcional del que obtengo los mensajes recibidos
-	 * @return Lista con los mensajes recibidos de ese usuario
-	 */
-	@Override
-	public List<Mensaje> getMensajesRecibidos(Optional<Usuario> emptyOpt) {
-		return this.integrantes.stream().flatMap(c -> c.getUsuario().getContactos().stream())
-				.filter(c -> c instanceof Grupo).map(c -> (Grupo) c).filter(g -> this.equals(g))
-				.flatMap(g -> g.getMensajesEnviados().stream()).collect(Collectors.toList());
-	}
+    /**
+     * Recopila todos los mensajes enviados por los miembros del grupo.
+     * El parámetro usuario es ignorado en esta implementación.
+     *
+     * @param emptyOpt Parámetro no utilizado en esta implementación
+     * @return Lista de todos los mensajes enviados al grupo
+     */
+    @Override
+    public List<Mensaje> getMensajesRecibidos(Optional<Usuario> emptyOpt) {
+        return this.integrantes.stream()
+                .flatMap(c -> c.getUsuario().getContactos().stream())
+                .filter(c -> c instanceof Grupo)
+                .map(c -> (Grupo) c)
+                .filter(g -> this.equals(g))
+                .flatMap(g -> g.getMensajesEnviados().stream())
+                .collect(Collectors.toList());
+    }
 
-	/**
-	 * Devuelve los mensajes que ha enviado el usuario al grupo
-	 * 
-	 * @param usuario Usuario del que cojo los mensajes que el ha enviado a su grupo
-	 * @return Lista con los mensajes que el usuario ha enviado al grupo
-	 */
-	public List<Mensaje> getMisMensajesGrupo(Usuario usuario) {
-		return getMensajesEnviados().stream().filter(m -> m.getEmisor().getCodigo() == usuario.getCodigo())
-				.collect(Collectors.toList());
-	}
+    /**
+     * Obtiene los mensajes enviados por un usuario específico al grupo.
+     *
+     * @param usuario Usuario del cual se quieren obtener los mensajes
+     * @return Lista de mensajes enviados por el usuario al grupo
+     */
+    public List<Mensaje> getMisMensajesGrupo(Usuario usuario) {
+        return getMensajesEnviados().stream()
+                .filter(m -> m.getEmisor().getCodigo() == usuario.getCodigo())
+                .collect(Collectors.toList());
+    }
 
-	/**
-	 * Borra todos los mensajes del grupo
-	 */
-	public List<Mensaje> removeMensajesRecibidos() {
-		List<Mensaje> recibidos = getMensajesRecibidos(Optional.empty());
-		List<Mensaje> copia = new LinkedList<Mensaje>(recibidos);
-		recibidos.clear();
-		return copia;
-	}
+    /**
+     * Elimina y devuelve todos los mensajes del grupo.
+     *
+     * @return Copia de los mensajes eliminados
+     */
+    public List<Mensaje> removeMensajesRecibidos() {
+        List<Mensaje> recibidos = getMensajesRecibidos(Optional.empty());
+        List<Mensaje> copia = new LinkedList<>(recibidos);
+        recibidos.clear();
+        return copia;
+    }
 
-	/**
-	 * Indica si el usuario pertenece al grupo
-	 * 
-	 * @param usuario Usuario a comprobar si está en el grupo
-	 * @return Devuelve si el usuario pertenece al grupo
-	 */
-	public boolean hasParticipante(Usuario usuario) {
-		return integrantes.stream().anyMatch(i -> i.getUsuario().equals(usuario));
-	}
+    /**
+     * Verifica si un usuario es miembro del grupo.
+     *
+     * @param usuario Usuario a verificar
+     * @return true si el usuario es miembro del grupo, false en caso contrario
+     */
+    public boolean hasParticipante(Usuario usuario) {
+        return integrantes.stream()
+                .anyMatch(i -> i.getUsuario().equals(usuario));
+    }
 
-	// HashCode e Equals
-	/**
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((getNombre() == null) ? 0 : getNombre().hashCode());
-		return result;
-	}
+    /**
+     * Calcula el código hash del grupo basado en su nombre.
+     *
+     * @return Código hash calculado
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((getNombre() == null) ? 0 : getNombre().hashCode());
+        return result;
+    }
 
-	/**
-	 * Dos grupos son iguales si tienen el mismo nombre.
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Grupo other = (Grupo) obj;
-		if (getNombre() == null) {
-			if (other.getNombre() != null)
-				return false;
-		} else if (!getNombre().equals(other.getNombre()))
-			return false;
-		return true;
-	}
+    /**
+     * Compara si dos grupos son iguales basándose en su nombre.
+     * Dos grupos se consideran iguales si tienen exactamente el mismo nombre.
+     *
+     * @param obj Objeto a comparar
+     * @return true si los grupos son iguales, false en caso contrario
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Grupo other = (Grupo) obj;
+        if (getNombre() == null) {
+            if (other.getNombre() != null)
+                return false;
+        } else if (!getNombre().equals(other.getNombre()))
+            return false;
+        return true;
+    }
 }
