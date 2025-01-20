@@ -8,13 +8,54 @@ import java.awt.event.*;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ContactoIndividual;
 
+
+//Esto lo usa el del github para que quede más bonito lo modificaremos
+/**
+ * Clase que representa al chat con las burbujas. Se creó con el objetivo de que
+ * desaparezca la scrollbar horizontal del chat.
+ */
+class ChatBurbujas extends JPanel implements Scrollable {
+	private static final long serialVersionUID = 1L;
+
+	@Override
+	public boolean getScrollableTracksViewportWidth() {
+		return true;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportHeight() {
+		return false;
+	}
+
+	@Override
+	public Dimension getPreferredScrollableViewportSize() {
+		return null;
+	}
+
+	@Override
+	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return 0;
+	}
+
+	@Override
+	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return 0;
+	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+}
+
+
 public class VentanaPrincipal extends JFrame {
     private static final long serialVersionUID = 1L;
     private JPanel panelContactos;
     private JPanel panelChat;
     private JTextField campoMensaje;
     private JTextArea areaMensajes;
-    private ContactoIndividual contactoActual;  // Ahora usamos ContactoIndividual
+    private ContactoIndividual contactoActual;  
     private Controlador controlador;
     private int xMouse, yMouse;
 
@@ -23,6 +64,8 @@ public class VentanaPrincipal extends JFrame {
     private final Color colorSecundario = new Color(236, 240, 241);
     private final Color colorAcento = new Color(231, 76, 60);
 
+    
+    
     public VentanaPrincipal() {
         controlador = Controlador.getInstancia();
         configurarVentana();
@@ -196,20 +239,16 @@ public class VentanaPrincipal extends JFrame {
         }
     }
 
-    private void enviarMensaje() {
-        String mensaje = campoMensaje.getText();
-        if (!mensaje.isEmpty() && contactoActual != null) {
-            areaMensajes.append("Tú: " + mensaje + "\n");
-            campoMensaje.setText("");
+    private void enviarMensaje(ChatBurbujas panel, JTextField textField, Contacto contacto) {
+		// No permite enviar un mensaje si no hay seleccionado ningún contacto
+		if (contacto == null)
+			return;
 
-            controlador.enviarMensaje(contactoActual, mensaje);
+		controlador.enviarMensaje(contacto, textField.getText());
 
-            Timer timer = new Timer(1000, e -> {
-                String respuesta = controlador.obtenerRespuesta(contactoActual);
-                areaMensajes.append(contactoActual.getNombre() + ": " + respuesta + "\n");
-            });
-            timer.setRepeats(false);
-            timer.start();
-        }
-    }
-}
+		BubbleText burbuja = new BubbleText(panel, textField.getText(), SENT_MESSAGE_COLOR, "You", BubbleText.SENT,
+				MESSAGE_SIZE);
+		panel.add(burbuja);
+		textField.setText(null);
+		listaContactos.updateUI();
+	}
