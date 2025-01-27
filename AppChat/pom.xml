@@ -13,12 +13,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
             <version>1.1</version>
         </dependency>
         <dependency>
-    <groupId>com.toedter</groupId>
-    <artifactId>jcalendar</artifactId>
-    <version>1.4</version>
-</dependency>
-
-    </dependencies>
+    		<groupId>com.toedter</groupId>
+    		<artifactId>jcalendar</artifactId>
+    		<version>1.4</version>
+		</dependency>
+</dependencies>
     
 
  <build>
@@ -27,7 +26,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.8.1</version>
             <configuration>
-                <release>8</release>
+                <release>21</release>
             </configuration>
         </plugin>
     </plugins>
