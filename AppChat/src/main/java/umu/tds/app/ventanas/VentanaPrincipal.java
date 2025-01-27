@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ContactoIndividual;
+import umu.tds.app.AppChat.*;
 
 
 //Esto lo usa el del github para que quede más bonito lo modificaremos
