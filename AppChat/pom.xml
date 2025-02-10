@@ -5,20 +5,15 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <groupId>AppChat</groupId>
     <artifactId>AppChat</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>tds</groupId>
-            <artifactId>chatWindowLib</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-    		<groupId>com.toedter</groupId>
-    		<artifactId>jcalendar</artifactId>
-    		<version>1.4</version>
-		</dependency>
+<dependencies>
+ 
+    <dependency>
+        <groupId>com.toedter</groupId>
+        <artifactId>jcalendar</artifactId>
+        <version>1.4</version>
+    </dependency>
 </dependencies>
-    
+
 
  <build>
     <plugins>

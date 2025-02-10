@@ -3,6 +3,9 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+
+import tds.BubbleText;
+
 import java.awt.*;
 import java.awt.event.*;
 import umu.tds.app.AppChat.Controlador;
@@ -140,12 +143,12 @@ public class VentanaPrincipal extends JFrame {
         campoMensaje.setBackground(colorPrincipal);
         campoMensaje.setBorder(new LineBorder(colorSecundario, 2, true));
 
-        JButton btnEnviar = crearBotonPersonalizado("Enviar", e -> enviarMensaje(), colorPrincipal, colorSecundario, colorAcento);
+//        JButton btnEnviar = crearBotonPersonalizado("Enviar", e -> enviarMensaje(), colorPrincipal, colorSecundario, colorAcento);
 
         JPanel panelEnvio = new JPanel(new BorderLayout());
         panelEnvio.setOpaque(false);
         panelEnvio.add(campoMensaje, BorderLayout.CENTER);
-        panelEnvio.add(btnEnviar, BorderLayout.EAST);
+  //      panelEnvio.add(btnEnviar, BorderLayout.EAST);
 
         panelChat.add(scrollMensajes, BorderLayout.CENTER);
         panelChat.add(panelEnvio, BorderLayout.SOUTH);
@@ -240,16 +243,17 @@ public class VentanaPrincipal extends JFrame {
         }
     }
 
-    private void enviarMensaje(ChatBurbujas panel, JTextField textField, Contacto contacto) {
+    private void enviarMensaje(ChatBurbujas panel, JTextField textField, ContactoIndividual contacto) {
 		// No permite enviar un mensaje si no hay seleccionado ningún contacto
 		if (contacto == null)
 			return;
 
 		controlador.enviarMensaje(contacto, textField.getText());
 
-		BubbleText burbuja = new BubbleText(panel, textField.getText(), SENT_MESSAGE_COLOR, "You", BubbleText.SENT,
-				MESSAGE_SIZE);
-		panel.add(burbuja);
+		/*BubbleText burbuja = new BubbleText(panel, textField.getText(), Color.GREEN, "You", BubbleText.SENT,
+				24);
+		panel.add(burbuja);*/
 		textField.setText(null);
-		listaContactos.updateUI();
 	}
+    
+}
