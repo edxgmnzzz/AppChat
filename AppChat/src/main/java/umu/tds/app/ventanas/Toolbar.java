@@ -3,11 +3,10 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-;
 
 public class Toolbar extends JPanel {
     private static final long serialVersionUID = 1L;
-	private JFrame ventanaPadre;
+    private JFrame ventanaPadre;
     private Point initialClick;
 
     public Toolbar(JFrame ventana, String titulo) {
