@@ -39,6 +39,7 @@ public class VentanaPrincipal extends JFrame {
     
     public VentanaPrincipal() {
         controlador = Controlador.getInstancia();
+        //setIconImage(Toolkit.getDefaultToolkit().getImage("poner bien));
         panelContenidos = new JPanel();
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setUndecorated(true);
