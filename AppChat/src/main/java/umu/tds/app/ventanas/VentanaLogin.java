@@ -49,7 +49,7 @@ public class VentanaLogin extends JFrame {
         setLocationRelativeTo(null);
         setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, BORDER_RADIUS, BORDER_RADIUS));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
     }
 
     //Para iniciar sesión con enter o salir con ESC

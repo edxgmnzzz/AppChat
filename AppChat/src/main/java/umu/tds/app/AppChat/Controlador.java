@@ -23,7 +23,7 @@ public class Controlador {
     private Controlador() {
         // Inicialización de usuarios simulados
         usuariosSimulados = new HashMap<>();
-        usuariosSimulados.put("admin", new Usuario(new ImageIcon(), "Admin", LocalDate.of(1990, 1, 1), 1234567890, "admin", "admin123", "admin@gmail.com"));
+        usuariosSimulados.put("a", new Usuario(new ImageIcon(), "Admin", LocalDate.of(1990, 1, 1), 1234567890, "a", "1", "admin@gmail.com"));
         usuariosSimulados.put("usuario", new Usuario(new ImageIcon(), "Usuario", LocalDate.of(2000, 1, 1), 987654321, "usuario", "password", "user@gmail.com"));
 
         // Inicialización de contactos simulados
