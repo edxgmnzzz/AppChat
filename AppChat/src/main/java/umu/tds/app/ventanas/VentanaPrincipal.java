@@ -1,66 +1,73 @@
 package umu.tds.app.ventanas;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-
-import tds.BubbleText;
+import umu.tds.app.AppChat.Controlador;
 
 import java.awt.*;
 import java.awt.event.*;
-import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.ContactoIndividual;
-import umu.tds.app.AppChat.*;
-
-
-
 
 public class VentanaPrincipal extends JFrame {
     private static final long serialVersionUID = 1L;
     private static final int WINDOW_WIDTH = 900;
     private static final int WINDOW_HEIGHT = 650;
-    private static final int BORDER_RADIUS = 15;
-
-    private JPanel panelContactos;
-    private JPanel panelChat;
     private JPanel panelContenidos;
-    private JTextField campoMensaje;
-    private JTextArea areaMensajes;
-    private ContactoIndividual contactoActual;  
     private Controlador controlador;
     private int xMouse, yMouse;
 
     private final Color colorFondo = new Color(41, 128, 185);
-    private final Color colorPrincipal = new Color(52, 152, 219);
-    private final Color colorSecundario = new Color(236, 240, 241);
-    private final Color colorAcento = new Color(231, 76, 60);
 
-    
-    
     public VentanaPrincipal() {
         controlador = Controlador.getInstancia();
-        //setIconImage(Toolkit.getDefaultToolkit().getImage("poner bien));
-        panelContenidos = new JPanel();
+        setTitle("ParabarApp");
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        setUndecorated(true);
+        setUndecorated(true);  // Esto elimina la barra de título predeterminada
         setLocationRelativeTo(null);
-        setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, BORDER_RADIUS, BORDER_RADIUS));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
+
+        // Creamos el panel de contenidos y lo asignamos a la ventana
+        panelContenidos = new JPanel();
         setContentPane(panelContenidos);
+        panelContenidos.setLayout(new BorderLayout());
+
+        // Añadir la barra de herramientas personalizada en la parte superior
         Toolbar toolbar = new Toolbar(this, "Principal");
-        add(toolbar, BorderLayout.NORTH);
-        JPanel chat=new JPanel();
-        chat.setLayout(new BoxLayout(chat,BoxLayout.Y_AXIS));
-        chat.setSize(200,300);
-        chat.setMinimumSize(new Dimension(400,700));
-        chat.setMaximumSize(new Dimension(400,700));
-        chat.setPreferredSize(new Dimension(400,700));
-        BubbleText burbuja;
-        burbuja=new BubbleText(chat,"Hola grupo!!", Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja);
-        panelContenidos.add(chat);
+        panelContenidos.add(toolbar, BorderLayout.NORTH);
+
+        // Crear panel para el contenido principal (cuerpo de la ventana)
+        JPanel contentPanel = new JPanel();
+        contentPanel.setBackground(colorFondo);
+        contentPanel.setLayout(new BorderLayout());
+        
+        // Crear el JScrollPane que contendrá la lista de chats recientes
+        String[] chatsRecientes = { "Chat con Juan", "Chat con María", "Chat con Pedro" }; // Ejemplo
+        JList<String> listaChats = new JList<>(chatsRecientes);
+        listaChats.setBackground(new Color(245, 245, 245)); // Color de fondo claro
+        listaChats.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Sólo una selección
+
+        JScrollPane scrollPane = new JScrollPane(listaChats);
+        scrollPane.setPreferredSize(new Dimension(250, 500)); // Ajusta el tamaño de la lista
+        
+        contentPanel.add(scrollPane, BorderLayout.WEST);  // Coloca el JScrollPane a la izquierda
+
+        // Crear un área de chat o contenido adicional
+        JTextArea areaMensajes = new JTextArea();
+        areaMensajes.setBackground(Color.WHITE);
+        areaMensajes.setEditable(false);
+        areaMensajes.setText("¡Bienvenido a la aplicación!");
+        areaMensajes.setWrapStyleWord(true);
+        areaMensajes.setLineWrap(true);
+
+        // Añadir el área de mensajes al centro de la ventana
+        contentPanel.add(areaMensajes, BorderLayout.CENTER);
+
+        panelContenidos.add(contentPanel, BorderLayout.CENTER);  // Añadimos el contenido al centro de la ventana
     }
 
-
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            VentanaConBarra ventana = new VentanaConBarra();
+            ventana.setVisible(true);
+        });
+    }
 }
