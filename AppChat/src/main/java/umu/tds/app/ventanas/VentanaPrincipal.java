@@ -40,7 +40,7 @@ public class VentanaPrincipal extends JFrame {
         contentPanel.setLayout(new BorderLayout());
         
         // Crear el JScrollPane que contendrá la lista de chats recientes
-        String[] chatsRecientes = { "Chat con Pedro", "Chat con María", "Chat con Pedro" }; // Ejemplo
+        String[] chatsRecientes = { "Chat con Piter", "Chat con María", "Chat con Pedro" }; // Ejemplo
         JList<String> listaChats = new JList<>(chatsRecientes);
         listaChats.setBackground(new Color(245, 245, 245)); // Color de fondo claro
         listaChats.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Sólo una selección
