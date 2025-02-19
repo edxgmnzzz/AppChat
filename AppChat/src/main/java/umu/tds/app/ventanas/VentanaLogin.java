@@ -37,9 +37,10 @@ public class VentanaLogin extends JFrame {
 
     // Inicializador de los componentes
     private void initializeUI() {
-        configurarVentana();
-        crearComponentes();
-        addKeyListeners();
+    	abrirVentanaPrincipal();
+        //configurarVentana();
+        //crearComponentes();
+        //addKeyListeners();
     }
 
     // Diseño de la ventana
