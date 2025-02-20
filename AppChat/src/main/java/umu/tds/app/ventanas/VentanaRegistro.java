@@ -280,9 +280,9 @@ public class VentanaRegistro extends JFrame {
     }
 
 
-    private JLabel crearLabel(String texto, int tamaÃ±oFuente, Color colorTexto) {
+    private JLabel crearLabel(String texto, int tamañoFuente, Color colorTexto) {
         JLabel label = new JLabel(texto);
-        label.setFont(new Font("Arial", Font.BOLD, tamaÃ±oFuente));
+        label.setFont(new Font("Arial", Font.BOLD, tamañoFuente));
         label.setForeground(colorTexto);
         return label;
     }
