@@ -1,11 +1,18 @@
 package umu.tds.app.AppChat;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
@@ -20,19 +27,41 @@ public class Controlador {
     private Map<String, List<String>> mensajes;      // Historial de mensajes
     private Usuario usuarioActual;                   // Usuario actualmente autenticado
 
-    private Controlador() {
+    private Controlador(){
         // Inicializaci贸n de usuarios simulados
         usuariosSimulados = new HashMap<>();
-        usuariosSimulados.put("a", new Usuario(new ImageIcon(), "Admin", LocalDate.of(1990, 1, 1), 1234567890, "a", "1", "admin@gmail.com"));
-        usuariosSimulados.put("usuario", new Usuario(new ImageIcon(), "Usuario", LocalDate.of(2000, 1, 1), 987654321, "usuario", "password", "user@gmail.com"));
+        
+        String path = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Florentino_perez.jpg/220px-Florentino_perez.jpg";
+        BufferedImage image = null;
+        try {
+            URI uri = new URI(path);  // Convert String to URI
+            URL url = uri.toURL();    // Convert URI to URL
+            image = ImageIO.read(url); // Load the image
+
+            if (image != null) {
+                System.out.println("Image loaded successfully!");
+            } else {
+                System.out.println("Failed to load image.");
+            }
+
+        } catch (URISyntaxException e) {
+            System.err.println("Invalid URI: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Error loading image: " + e.getMessage());
+        }
+        
+        usuarioActual = new Usuario(new ImageIcon(image), "Florentino P閞ez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null);
+        
+        //usuariosSimulados.put("a", new Usuario(new ImageIcon(image), "Florentino P閞ez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null));
+        //usuariosSimulados.put("usuario", new Usuario(new ImageIcon(), "Usuario", LocalDate.of(2000, 1, 1), 987654321, "usuario", "password", "user@gmail.com"));
 
         // Inicializaci贸n de contactos simulados
-        contactos = new ArrayList<>();
+        /*contactos = new ArrayList<>();
         contactos.add(new ContactoIndividual("Oscar", 123456789, new Usuario(new ImageIcon(), "Oscar", LocalDate.of(1990, 1, 1), 123456789, "oscar", "12345", "oscar@gmail.com")));
         contactos.add(new ContactoIndividual("Javi", 234567890, new Usuario(new ImageIcon(), "Javi", LocalDate.of(1995, 1, 1), 234567890, "javi", "password", "javi@gmail.com")));
         contactos.add(new ContactoIndividual("Lucia", 345678901, new Usuario(new ImageIcon(), "Lucia", LocalDate.of(2000, 1, 1), 345678901, "lucia", "12345", "lucia@gmail.com")));
         contactos.add(new ContactoIndividual("Gloria", 456789012, new Usuario(new ImageIcon(), "Gloria", LocalDate.of(1985, 1, 1), 456789012, "gloria", "password", "gloria@gmail.com")));
-
+*/
         // Inicializaci贸n del historial de mensajes (vac铆o inicialmente)
         mensajes = new HashMap<>();
     }
@@ -91,41 +120,41 @@ public class Controlador {
      * @param contacto Contacto destinatario.
      * @param mensaje Contenido del mensaje.
      */
-    public void enviarMensaje(ContactoIndividual contacto, String mensaje) {
+    /*public void enviarMensaje(ContactoIndividual contacto, String mensaje) {
         if (usuarioActual == null || contacto == null || mensaje == null || mensaje.isEmpty()) {
             return;
         }
         String clave = generarClaveConversacion(contacto);
         mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("T煤: " + mensaje);
-    }
+    }*/
 
     /**
      * Obtiene el historial de mensajes con un contacto.
      * @param contacto Contacto.
      * @return Lista de mensajes.
      */
-    public List<String> obtenerMensajes(ContactoIndividual contacto) {
+    /*public List<String> obtenerMensajes(ContactoIndividual contacto) {
         String clave = generarClaveConversacion(contacto);
         return mensajes.getOrDefault(clave, new ArrayList<>());
-    }
+    }*/
 
     /**
      * Genera una clave 煤nica para identificar la conversaci贸n entre el usuario actual y un contacto.
      * @param contacto Contacto.
      * @return Clave 煤nica de la conversaci贸n.
      */
-    private String generarClaveConversacion(ContactoIndividual contacto) {
+    /*private String generarClaveConversacion(ContactoIndividual contacto) {
         return usuarioActual.getNick() + "-" + contacto.getUsuario().getNick();
-    }
+    }*
 
     /**
      * Obtiene una respuesta simulada del contacto.
      * @param contacto Contacto.
      * @return Respuesta simulada.
      */
-    public String obtenerRespuesta(ContactoIndividual contacto) {
+    /*public String obtenerRespuesta(ContactoIndividual contacto) {
         return "Gracias por tu mensaje, " + contacto.getUsuario().getNick() + ". 隆Hablamos pronto!";
-    }
+    }*/
 
     /**
      * Agrega un nuevo contacto a la lista de contactos.
@@ -174,9 +203,17 @@ public class Controlador {
         if (rutaFoto == null || rutaFoto.isEmpty()) {
             rutaFoto = "/umu/tds/app/recursos/grupo.png";
         }
-        Usuario nuevoUsuario = new Usuario(new ImageIcon(rutaFoto), nombreReal, fechaNacimiento, telefono, nombreUsuario, password, email);
-        usuariosSimulados.put(nombreUsuario, nuevoUsuario);
+        //Usuario nuevoUsuario = new Usuario(new ImageIcon(rutaFoto), nombreReal, fechaNacimiento, telefono, nombreUsuario, password, email);
+        //usuariosSimulados.put(nombreUsuario, nuevoUsuario);
         JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente.", "脡xito", JOptionPane.INFORMATION_MESSAGE);
         return true;
+    }
+    
+    public String getNombreUserActual() {
+    	return usuarioActual.getName();
+    }
+    
+    public ImageIcon getIconoUserActual() {
+    	return usuarioActual.getProfilePhotos();
     }
 }

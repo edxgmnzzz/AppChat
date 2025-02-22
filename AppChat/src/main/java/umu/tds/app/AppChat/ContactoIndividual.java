@@ -69,7 +69,7 @@ public class ContactoIndividual extends Contacto {
      */
     @Override
     public ImageIcon getFoto() {
-        return usuario.getProfilePhoto();
+        return usuario.getProfilePhotos();
     }
 
     /**
@@ -111,15 +111,6 @@ public class ContactoIndividual extends Contacto {
         } else {
             return new LinkedList<>();
         }
-    }
-
-    /**
-     * Obtiene el estado actual del contacto.
-     *
-     * @return Estado opcional del contacto
-     */
-    public Optional<Status> getEstado() {
-        return usuario.getEstado();
     }
 
     /**
