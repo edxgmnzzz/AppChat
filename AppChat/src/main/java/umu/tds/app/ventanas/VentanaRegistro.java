@@ -97,7 +97,7 @@ public class VentanaRegistro extends JFrame {
         gbc.gridx = 1;
         panelCampos.add(campoUsuario, gbc);
 
-        gbc.gridx = 0;
+        gbc.gridx = 1;
         gbc.gridy = 2;
         panelCampos.add(crearLabel("Password:", 14, COLOR_SECUNDARIO), gbc);
         gbc.gridx = 1;

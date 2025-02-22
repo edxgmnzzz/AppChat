@@ -124,18 +124,6 @@ public class Grupo extends Contacto {
     }
 
     /**
-     * Obtiene los mensajes enviados por un usuario específico al grupo.
-     *
-     * @param usuario Usuario del cual se quieren obtener los mensajes
-     * @return Lista de mensajes enviados por el usuario al grupo
-     */
-    public List<Mensaje> getMisMensajesGrupo(Usuario usuario) {
-        return getMensajesEnviados().stream()
-                .filter(m -> m.getEmisor().getCodigo() == usuario.getCodigo())
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Elimina y devuelve todos los mensajes del grupo.
      *
      * @return Copia de los mensajes eliminados
