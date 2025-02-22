@@ -15,6 +15,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 /**
  * Clase Controlador que implementa el patrón Singleton para gestionar usuarios,
@@ -50,18 +51,18 @@ public class Controlador {
             System.err.println("Error loading image: " + e.getMessage());
         }
         
-        usuarioActual = new Usuario(new ImageIcon(image), "Florentino P�rez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null);
+        usuarioActual = new Usuario(new ImageIcon(image), "Florentino P�rez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null);
         
-        //usuariosSimulados.put("a", new Usuario(new ImageIcon(image), "Florentino P�rez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null));
+        //usuariosSimulados.put("a", new Usuario(new ImageIcon(image), "Florentino P�rez", LocalDate.of(1990, 1, 1), 1234567890, "1", "admin@gmail.com", false, "Soy su florentineza", null, null));
         //usuariosSimulados.put("usuario", new Usuario(new ImageIcon(), "Usuario", LocalDate.of(2000, 1, 1), 987654321, "usuario", "password", "user@gmail.com"));
 
         // Inicialización de contactos simulados
-        /*contactos = new ArrayList<>();
-        contactos.add(new ContactoIndividual("Oscar", 123456789, new Usuario(new ImageIcon(), "Oscar", LocalDate.of(1990, 1, 1), 123456789, "oscar", "12345", "oscar@gmail.com")));
-        contactos.add(new ContactoIndividual("Javi", 234567890, new Usuario(new ImageIcon(), "Javi", LocalDate.of(1995, 1, 1), 234567890, "javi", "password", "javi@gmail.com")));
-        contactos.add(new ContactoIndividual("Lucia", 345678901, new Usuario(new ImageIcon(), "Lucia", LocalDate.of(2000, 1, 1), 345678901, "lucia", "12345", "lucia@gmail.com")));
-        contactos.add(new ContactoIndividual("Gloria", 456789012, new Usuario(new ImageIcon(), "Gloria", LocalDate.of(1985, 1, 1), 456789012, "gloria", "password", "gloria@gmail.com")));
-*/
+        contactos = new ArrayList<>();
+        contactos.add(new ContactoIndividual("Oscar", 123456789, new Usuario(new ImageIcon(), "Oscar", LocalDate.of(1990, 1, 1), 123456789, "12345", "oscar@gmail.com", true, "Hola", null, null)));
+        //contactos.add(new ContactoIndividual("Javi", 234567890, new Usuario(new ImageIcon(), "Javi", LocalDate.of(1995, 1, 1), 234567890, "javi", "password", "javi@gmail.com")));
+        //contactos.add(new ContactoIndividual("Lucia", 345678901, new Usuario(new ImageIcon(), "Lucia", LocalDate.of(2000, 1, 1), 345678901, "lucia", "12345", "lucia@gmail.com")));
+        //contactos.add(new ContactoIndividual("Gloria", 456789012, new Usuario(new ImageIcon(), "Gloria", LocalDate.of(1985, 1, 1), 456789012, "gloria", "password", "gloria@gmail.com")));
+
         // Inicialización del historial de mensajes (vacío inicialmente)
         mensajes = new HashMap<>();
     }
@@ -120,13 +121,13 @@ public class Controlador {
      * @param contacto Contacto destinatario.
      * @param mensaje Contenido del mensaje.
      */
-    /*public void enviarMensaje(ContactoIndividual contacto, String mensaje) {
+    public void enviarMensaje(Contacto contacto, String mensaje) {
         if (usuarioActual == null || contacto == null || mensaje == null || mensaje.isEmpty()) {
             return;
         }
         String clave = generarClaveConversacion(contacto);
         mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("Tú: " + mensaje);
-    }*/
+    }
 
     /**
      * Obtiene el historial de mensajes con un contacto.
@@ -143,9 +144,10 @@ public class Controlador {
      * @param contacto Contacto.
      * @return Clave única de la conversación.
      */
-    /*private String generarClaveConversacion(ContactoIndividual contacto) {
-        return usuarioActual.getNick() + "-" + contacto.getUsuario().getNick();
-    }*
+    private String generarClaveConversacion(Contacto contacto) {
+        return usuarioActual.getName() + "-" + contacto.getNombre();
+    }
+    
 
     /**
      * Obtiene una respuesta simulada del contacto.

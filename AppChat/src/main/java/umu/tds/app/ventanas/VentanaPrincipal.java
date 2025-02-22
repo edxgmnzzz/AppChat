@@ -3,6 +3,7 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 
 import tds.BubbleText;
+import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Usuario;
@@ -20,6 +21,9 @@ public class VentanaPrincipal extends JFrame {
     private JPanel panelContenidos;
     private Controlador controlador;
     private int xMouse, yMouse;
+    private Contacto contactoActual; // Añadir esta línea como campo de la clase
+
+
 
     private final Color colorFondo = new Color(41, 128, 185);
 
@@ -48,6 +52,16 @@ public class VentanaPrincipal extends JFrame {
         panelNorte.add(panelOpciones);
         
         JComboBox<String> contactos = new JComboBox<>(new String[]{"Seleccione un contacto...", "Florentino", "Laporta"});
+        
+		contactos.addActionListener(e -> {
+            String selectedContact = (String) contactos.getSelectedItem();
+            if (!"Seleccione un contacto...".equals(selectedContact)) {
+                // Aquí obtenemos el ContactoIndividual basado en el nombre seleccionado
+                contactoActual = controlador.obtenerContactos().getFirst();
+            } else {
+                contactoActual = null;
+            }
+        });
         JTextField phoneInput = new JTextField(10);
         JButton sendButton = new JButton("Enviar");
         JButton searchButton = new JButton("Buscar");
@@ -111,6 +125,10 @@ public class VentanaPrincipal extends JFrame {
         premiumButton.addActionListener(ev -> {
         	JOptionPane.showConfirmDialog(null, "¿Quieres hacerte Premium socio?");
         });
+        
+       
+        
+        
         
         contactsButton.addActionListener(ev -> {
         	JFrame panelContactos = new JFrame();
@@ -261,8 +279,30 @@ public class VentanaPrincipal extends JFrame {
         panelDerecha.add(scrollchat);
         panelContenidos.add(panelDerecha,BorderLayout.CENTER);
         
+        
+        sendButton.addActionListener(ev -> {
+            if (contactoActual != null && !phoneInput.getText().trim().isEmpty()) {
+                enviarMensaje(chat, phoneInput, contactoActual);
+                phoneInput.setText(""); // Limpiar el campo después de enviar
+                System.out.println("Mensaje enviado a " + contactoActual.getNombre());
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Por favor, seleccione un contacto y escriba un mensaje", 
+                    "Error", 
+                    JOptionPane.WARNING_MESSAGE);
+            }
+        });
     }
-
+    
+    
+    private void enviarMensaje(JPanel chat, JTextField campoTexto, Contacto contacto) {
+        if (contacto == null) return;
+        controlador.enviarMensaje(contacto, campoTexto.getText());
+        BubbleText burbuja = new BubbleText(chat, campoTexto.getText(), Color.GREEN, "J.Ramón", BubbleText.SENT);
+        chat.add(burbuja);
+        chat.revalidate();
+        chat.repaint();
+    }
     /*public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             VentanaConBarra ventana = new VentanaConBarra();
