@@ -1,312 +1,182 @@
 package umu.tds.app.ventanas;
 
 import javax.swing.*;
-
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 import tds.BubbleText;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.Usuario;
+import umu.tds.app.AppChat.Observer;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-public class VentanaPrincipal extends JFrame {
+public class VentanaPrincipal extends JFrame implements Observer {
     private static final long serialVersionUID = 1L;
     private static final int WINDOW_WIDTH = 900;
     private static final int WINDOW_HEIGHT = 650;
-    private JPanel panelContenidos;
+    private JPanel contentPanel;
     private Controlador controlador;
-    private int xMouse, yMouse;
-    private Contacto contactoActual; // Añadir esta línea como campo de la clase
+    private Contacto contactoActual;
+    private JTextField phoneInput;
+    private JPanel chatPanel;
+    private JScrollPane chatScrollPane;
+    private JList<String> chatList; // Referencia al JList de chats recientes
 
-
-
-    private final Color colorFondo = new Color(41, 128, 185);
+    private final Color BACKGROUND_COLOR = new Color(41, 128, 185);
 
     public VentanaPrincipal() {
-    
-    	
         controlador = Controlador.getInstancia();
+        controlador.addObserver(this); // Registrarse como observador
+        initializeUI();
+    }
+
+    private void initializeUI() {
         setTitle("ParabarApp");
-        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-        //setUndecorated(true);  // Esto elimina la barra de tÃ­tulo predeterminada
-        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
         setResizable(true);
-        
-        // Creamos el panel de contenidos y lo asignamos a la ventana
-        panelContenidos = new JPanel();
-        setContentPane(panelContenidos);
-        panelContenidos.setLayout(new BorderLayout());
-        
-        // Crear panel de arriba con todas las opciones
-        JPanel panelNorte = new JPanel();
-        panelContenidos.add(panelNorte, BorderLayout.NORTH);
-        panelNorte.setLayout((new BoxLayout(panelNorte, BoxLayout.Y_AXIS)));
-        
-        JPanel panelOpciones = new JPanel();
-        panelNorte.add(panelOpciones);
-        
-        JComboBox<String> contactos = new JComboBox<>(new String[]{"Seleccione un contacto...", "Florentino", "Laporta"});
-        
-		contactos.addActionListener(e -> {
-            String selectedContact = (String) contactos.getSelectedItem();
-            if (!"Seleccione un contacto...".equals(selectedContact)) {
-                // Aquí obtenemos el ContactoIndividual basado en el nombre seleccionado
-                contactoActual = controlador.obtenerContactos().getFirst();
-            } else {
-                contactoActual = null;
-            }
+
+        contentPanel = new JPanel(new BorderLayout());
+        setContentPane(contentPanel);
+
+        contentPanel.add(configureNorthPanel(), BorderLayout.NORTH);
+        contentPanel.add(configureLeftPanel(), BorderLayout.WEST);
+        contentPanel.add(configureRightPanel(), BorderLayout.CENTER);
+
+        pack();
+        setVisible(true);
+    }
+
+    private JPanel configureNorthPanel() {
+        JPanel northPanel = new JPanel();
+        northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.Y_AXIS));
+
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        List<ContactoIndividual> contactosList = controlador.obtenerContactos();
+        JComboBox<String> contactos = new JComboBox<>(contactosList.stream()
+                .map(Contacto::getNombre)
+                .toArray(String[]::new));
+        contactos.insertItemAt("Seleccione un contacto...", 0);
+        contactos.setSelectedIndex(0);
+        contactos.addActionListener(e -> {
+            String selected = (String) contactos.getSelectedItem();
+            contactoActual = "Seleccione un contacto...".equals(selected) ? null :
+                    contactosList.stream().filter(c -> c.getNombre().equals(selected)).findFirst().orElse(null);
+            updateChatPanel(); // Actualizar el chat al cambiar contacto
         });
-        JTextField phoneInput = new JTextField(10);
+
+        phoneInput = new JTextField(10);
+        phoneInput.setToolTipText("Escribe un mensaje...");
         JButton sendButton = new JButton("Enviar");
+        sendButton.addActionListener(new SendButtonListener());
         JButton searchButton = new JButton("Buscar");
+        searchButton.addActionListener(e -> new VentanaBusqueda(this));
         JButton contactsButton = new JButton("Contactos");
+        contactsButton.addActionListener(e -> new VentanaContactos(this));
         JButton premiumButton = new JButton("Premium");
+        premiumButton.addActionListener(e -> JOptionPane.showConfirmDialog(this, "¿Quieres hacerte Premium socio?"));
+
         JLabel userLabel = new JLabel(controlador.getNombreUserActual());
         JLabel userImage = new JLabel(controlador.getIconoUserActual());
-        
-        panelOpciones.add(contactos);
-        panelOpciones.add(phoneInput);
-        panelOpciones.add(sendButton);
-        panelOpciones.add(searchButton);
-        panelOpciones.add(contactsButton);
-        panelOpciones.add(premiumButton);
-        panelOpciones.add(userLabel);
-        panelOpciones.add(userImage);
-        
-        searchButton.addActionListener(ev2 -> {
-        	JFrame panelBuscar = new JFrame();
-        	panelBuscar.setSize(500,500);
-        	panelBuscar.setLocationRelativeTo(null);
-        	panelBuscar.setLayout(new BorderLayout());
-        	panelBuscar.setVisible(true);
-        	
-        	// Panel de búsqueda
-            JPanel searchPanel = new JPanel(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
-            gbc.fill = GridBagConstraints.HORIZONTAL;
 
-            JLabel searchIcon = new JLabel(new ImageIcon("search_icon.png")); // Reemplazar con un icono real
-            JTextField textSearch = new JTextField(10);
-            JTextField phoneSearch = new JTextField(10);
-            JTextField contactSearch = new JTextField(10);
-            JButton searchButton2 = new JButton("Buscar");
+        optionsPanel.add(contactos);
+        optionsPanel.add(phoneInput);
+        optionsPanel.add(sendButton);
+        optionsPanel.add(searchButton);
+        optionsPanel.add(contactsButton);
+        optionsPanel.add(premiumButton);
+        optionsPanel.add(userLabel);
+        optionsPanel.add(userImage);
 
-            gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 1;
-            searchPanel.add(searchIcon, gbc);
-
-            gbc.gridx = 1; gbc.gridwidth = 1;
-            searchPanel.add(textSearch, gbc);
-
-            gbc.gridx = 2;
-            searchPanel.add(phoneSearch, gbc);
-
-            gbc.gridx = 3;
-            searchPanel.add(contactSearch, gbc);
-
-            gbc.gridx = 4;
-            searchPanel.add(searchButton2, gbc);
-
-            panelBuscar.add(searchPanel, BorderLayout.NORTH);
-        	
-            JPanel messagesPanel = new JPanel();
-            messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
-            JScrollPane scrollPane = new JScrollPane(messagesPanel);
-            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-            panelBuscar.add(scrollPane, BorderLayout.CENTER);
-        });
-        
-        premiumButton.addActionListener(ev -> {
-        	JOptionPane.showConfirmDialog(null, "¿Quieres hacerte Premium socio?");
-        });
-        
-       
-        
-        
-        
-        contactsButton.addActionListener(ev -> {
-        	JFrame panelContactos = new JFrame();
-        	panelContactos.setSize(500,500);
-        	panelContactos.setLocationRelativeTo(null);
-        	panelContactos.setLayout(new BorderLayout());
-        	panelContactos.setVisible(true);
-        	
-        	JPanel principalContactos = new JPanel(new GridLayout(1, 3, 10, 10));
-        	// Panel izquierdo - Lista de contactos
-        	
-        	String[] chatsRecientes = { "Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro","Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro","Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro" ,"Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro" }; // Ejemplo
-            JList<String> listaChats = new JList<>(chatsRecientes);
-            JList<String> listaChats2 = new JList<>(chatsRecientes);
-            
-            JScrollPane contactScrollPane = new JScrollPane(listaChats);
-            JPanel leftPanel = new JPanel(new BorderLayout());
-            leftPanel.setBorder(BorderFactory.createTitledBorder("Lista Contactos"));
-            leftPanel.add(contactScrollPane, BorderLayout.CENTER);
-            JButton addContactButton = new JButton("Añadir Contacto");
-            leftPanel.add(addContactButton, BorderLayout.SOUTH);
-            
-            JPanel centerPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-            JButton moveRightButton = new JButton(">>");
-            JButton moveLeftButton = new JButton("<<");
-            centerPanel.add(moveRightButton);
-            centerPanel.add(moveLeftButton);
-            
-         // Panel derecho - Lista de grupos
-            JScrollPane groupScrollPane = new JScrollPane(listaChats2);
-            JPanel rightPanel = new JPanel(new BorderLayout());
-            rightPanel.setBorder(BorderFactory.createTitledBorder("Grupo1"));
-            rightPanel.add(groupScrollPane, BorderLayout.CENTER);
-            JButton addGroupButton = new JButton("Añadir Grupo");
-            rightPanel.add(addGroupButton, BorderLayout.SOUTH);
-            
-            principalContactos.add(rightPanel);
-            principalContactos.add(leftPanel);
-            principalContactos.add(centerPanel);
-        	panelContactos.add(principalContactos);
-        	
-        	addContactButton.addActionListener(ev1 -> {
-        		JFrame addContact = new JFrame();
-        		addContact.setSize(350,200);
-        		addContact.setLocationRelativeTo(null);
-        		addContact.setLayout(new BorderLayout());
-        		addContact.setVisible(true);
-        		
-        		JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
-        		JLabel nameLabel = new JLabel("Nombre:");
-        	    JTextField nameField = new JTextField();
-
-        	    JLabel phoneLabel = new JLabel("Teléfono:");
-        	    JTextField phoneField = new JTextField();
-
-        	    panel.add(nameLabel);
-        	    panel.add(nameField);
-        	    panel.add(phoneLabel);
-        	    panel.add(phoneField);
-        		
-        	    addContact.add(panel, BorderLayout.CENTER);
-        	    
-        	    JPanel buttonPanel = new JPanel();
-                JButton acceptButton = new JButton("Aceptar");
-                JButton cancelButton = new JButton("Cancelar");
-                
-                buttonPanel.add(acceptButton);
-                buttonPanel.add(cancelButton);
-                addContact.add(buttonPanel, BorderLayout.SOUTH);
-                
-                acceptButton.addActionListener(ev11 -> {
-                        if (phoneField.getText().trim().isEmpty()) {
-                            JOptionPane.showMessageDialog(addContact, "El teléfono indicado no existe.", "Error", JOptionPane.WARNING_MESSAGE);
-                        } else {
-                            JOptionPane.showMessageDialog(null, "Contacto añadido con éxito");
-                        }
-                });
-
-                cancelButton.addActionListener(e -> addContact.dispose());
-                
-        	});
-        	
-        	
-        	
-        });
-        
-        // Crear panel de la izquierda
-        JPanel panelIzquierda = new JPanel();
-        panelContenidos.add(panelIzquierda, BorderLayout.WEST);
-        panelIzquierda.setPreferredSize(new Dimension(300, getHeight()));
-        panelIzquierda.setBorder(BorderFactory.createTitledBorder("Chats"));
-        
-        String[] chatsRecientes = { "Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro","Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro","Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro" ,"Chat con Piter", "Chat con Maria", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro", "Chat con Pedro" }; // Ejemplo
-        JList<String> listaChats = new JList<>(chatsRecientes);
-        listaChats.setBackground(new Color(245, 245, 245)); // Color de fondo claro
-        //listaChats.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // SÃ³lo una selecciÃ³n
-                
-        JScrollPane scrollPane = new JScrollPane(listaChats);
-        panelIzquierda.add(scrollPane);
-        scrollPane.setPreferredSize(new Dimension(280, 500)); // Ajusta el tamaÃ±o de la lista
-        
-        
-        
-        // Crear panel de la derecha
-        JPanel panelDerecha = new JPanel(new BorderLayout());
-        panelDerecha.setBorder(BorderFactory.createTitledBorder("mensajes con Laporta"));
-
-        JPanel chat = new JPanel();
-        chat.setLayout(new BoxLayout(chat, BoxLayout.Y_AXIS)); // Apilar burbujas verticalmente
-        chat.setSize(400,700);
-        JScrollPane scrollchat = new JScrollPane();
-        scrollchat.setViewportView(chat);
-        scrollchat.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Siempre mostrar scrollbar
-        scrollchat.getVerticalScrollBar().setUnitIncrement(16);
-        
-        BubbleText burbuja;
-        burbuja = new BubbleText(chat, "Hola su florentineza",Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja);
-        
-        BubbleText burbuja2;
-        burbuja2=new BubbleText(chat, "Hola, ¿Está seguro de que la burbuja usa varias lineas si es necesario?", Color.LIGHT_GRAY, "Alumno", BubbleText.RECEIVED);
-        chat.add(burbuja2);
-        
-        BubbleText burbuja3;
-        burbuja3 = new BubbleText(chat, "Hola florentineza",Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja3);
-        
-        BubbleText burbuja4;
-        burbuja4=new BubbleText(chat, "Hola, ¿ seguro de que la burbuja usa varias lineas si es necesario?", Color.LIGHT_GRAY, "Alumno", BubbleText.RECEIVED);
-        chat.add(burbuja4);
-        
-        BubbleText burbuja5;
-        burbuja5 = new BubbleText(chat, "Hola florentineza",Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja5);
-        
-        BubbleText burbuja6;
-        burbuja6=new BubbleText(chat, "Hola, ¿ seguro de que la burbuja usa varias lineas si es necesario?", Color.LIGHT_GRAY, "Alumno", BubbleText.RECEIVED);
-        chat.add(burbuja6);
-        
-        BubbleText burbuja7;
-        burbuja7 = new BubbleText(chat, "Hola florentineza",Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja7);
-        
-        BubbleText burbuja8;
-        burbuja8=new BubbleText(chat, "Hola, ¿ seguro de que la burbuja usa varias lineas si es necesario?", Color.LIGHT_GRAY, "Alumno", BubbleText.RECEIVED);
-        chat.add(burbuja8);
-        
-        panelDerecha.add(scrollchat);
-        panelContenidos.add(panelDerecha,BorderLayout.CENTER);
-        
-        
-        sendButton.addActionListener(ev -> {
-            if (contactoActual != null && !phoneInput.getText().trim().isEmpty()) {
-                enviarMensaje(chat, phoneInput, contactoActual);
-                phoneInput.setText(""); // Limpiar el campo después de enviar
-                System.out.println("Mensaje enviado a " + contactoActual.getNombre());
-            } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Por favor, seleccione un contacto y escriba un mensaje", 
-                    "Error", 
-                    JOptionPane.WARNING_MESSAGE);
-            }
-        });
+        northPanel.add(optionsPanel);
+        return northPanel;
     }
-    
-    
-    private void enviarMensaje(JPanel chat, JTextField campoTexto, Contacto contacto) {
-        if (contacto == null) return;
-        controlador.enviarMensaje(contacto, campoTexto.getText());
-        BubbleText burbuja = new BubbleText(chat, campoTexto.getText(), Color.GREEN, "J.Ramón", BubbleText.SENT);
-        chat.add(burbuja);
-        chat.revalidate();
-        chat.repaint();
+
+    private JPanel configureLeftPanel() {
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setPreferredSize(new Dimension(300, WINDOW_HEIGHT));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Chats"));
+
+        String[] recentChats = controlador.getChatsRecientes();
+        chatList = new JList<>(recentChats);
+        chatList.setBackground(new Color(245, 245, 245));
+        JScrollPane scrollPane = new JScrollPane(chatList);
+        scrollPane.setPreferredSize(new Dimension(280, 500));
+
+        leftPanel.add(scrollPane, BorderLayout.CENTER);
+        return leftPanel;
     }
-    /*public static void main(String[] args) {
+
+    private JPanel configureRightPanel() {
+        chatPanel = new JPanel();
+        chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
+        chatPanel.setBorder(BorderFactory.createTitledBorder("Mensajes"));
+        chatPanel.setPreferredSize(new Dimension(400, 500));
+
+        chatScrollPane = new JScrollPane(chatPanel);
+        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.add(chatScrollPane, BorderLayout.CENTER);
+        return rightPanel;
+    }
+
+    private void addMessageBubble(String message, Color color, String author, int type) {
+        BubbleText bubble = new BubbleText(chatPanel, message, color, author, type);
+        chatPanel.add(bubble);
+        chatPanel.revalidate();
+        chatPanel.repaint();
+
         SwingUtilities.invokeLater(() -> {
-            VentanaConBarra ventana = new VentanaConBarra();
-            ventana.setVisible(true);
+            JScrollBar verticalBar = chatScrollPane.getVerticalScrollBar();
+            verticalBar.setValue(verticalBar.getMaximum());
         });
-    }*/
+    }
+
+    private void updateChatPanel() {
+        chatPanel.removeAll(); // Limpiar el panel de mensajes
+        if (contactoActual != null) {
+            chatPanel.setBorder(BorderFactory.createTitledBorder("Mensajes con " + contactoActual.getNombre()));
+            List<String> mensajes = controlador.obtenerMensajes(contactoActual);
+            for (String mensaje : mensajes) {
+                if (mensaje.startsWith("Tú: ")) {
+                    addMessageBubble(mensaje.substring(4), Color.GREEN, "J.Ramón", BubbleText.SENT);
+                } else {
+                    addMessageBubble(mensaje, Color.LIGHT_GRAY, contactoActual.getNombre(), BubbleText.RECEIVED);
+                }
+            }
+        } else {
+            chatPanel.setBorder(BorderFactory.createTitledBorder("Mensajes"));
+        }
+        chatPanel.revalidate();
+        chatPanel.repaint();
+    }
+
+    @Override
+    public void updateChatsRecientes(String[] chatsRecientes) {
+        chatList.setListData(chatsRecientes); // Actualizar la lista de chats recientes
+        chatList.revalidate();
+        chatList.repaint();
+    }
+
+    private class SendButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (contactoActual != null && !phoneInput.getText().trim().isEmpty()) {
+                controlador.enviarMensaje(contactoActual, phoneInput.getText());
+                addMessageBubble(phoneInput.getText(), Color.GREEN, "J.Ramón", BubbleText.SENT);
+                phoneInput.setText("");
+            } else {
+                JOptionPane.showMessageDialog(VentanaPrincipal.this,
+                        "Por favor, seleccione un contacto y escriba un mensaje",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new VentanaPrincipal());
+    }
 }
