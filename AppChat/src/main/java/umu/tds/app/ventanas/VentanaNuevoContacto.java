@@ -8,7 +8,7 @@ import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Usuario;
 
-public class VentanaNuevoContacto extends JFrame {
+public class VentanaNuevoContacto extends JFrame  {
     private static final long serialVersionUID = 1L;
     private final Controlador controlador; // Referencia al Controlador
 
@@ -30,7 +30,6 @@ public class VentanaNuevoContacto extends JFrame {
         panel.add(phoneLabel);
         panel.add(phoneField);
 
-        JPanel buttonPanel = new JPanel();
         JButton acceptButton = new JButton("Aceptar");
         JButton cancelButton = new JButton("Cancelar");
 
@@ -69,12 +68,9 @@ public class VentanaNuevoContacto extends JFrame {
 
         cancelButton.addActionListener(e -> dispose());
 
-        buttonPanel.add(acceptButton);
-        buttonPanel.add(cancelButton);
-
         setLayout(new BorderLayout());
         add(panel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
+        add(acceptButton, BorderLayout.SOUTH);
 
         setVisible(true);
     }

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
-
+import umu.tds.app.AppChat.Observer;
 /**
  * Clase Controlador que implementa el patrón Singleton y Subject para gestionar usuarios,
  * contactos y mensajes en la aplicación AppChat.
@@ -36,6 +36,7 @@ public class Controlador {
     private List<ContactoIndividual> contactos;
     private Map<String, List<String>> mensajes;
     private Usuario usuarioActual;
+    private Contacto contactoActual; // Nuevo campo para el contacto actual
     private List<Observer> observers;
 
     private Controlador() {
@@ -98,10 +99,16 @@ public class Controlador {
         observers.remove(observer);
     }
 
-    private void notifyObservers() {
+    private void notifyObserversChatsRecientes() {
         String[] chatsRecientes = getChatsRecientes();
         for (Observer observer : observers) {
             observer.updateChatsRecientes(chatsRecientes);
+        }
+    }
+
+    private void notifyObserversContacto(Contacto contacto) {
+        for (Observer observer : observers) {
+            observer.updateContactoActual(contacto);
         }
     }
 
@@ -114,20 +121,40 @@ public class Controlador {
         if (usuario != null && usuario.getPassword().equals(password)) {
             usuarioActual = usuario;
             if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " ha iniciado sesión.");
-            notifyObservers();
+            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al iniciar sesión
             return true;
         }
         if (LOGGER != null) LOGGER.warning("Credenciales incorrectas para " + nombreUsuario);
         return false;
     }
 
+    public Contacto obtenerContactoPorNombre(String nombre) {
+        for (Contacto contacto : contactos) {
+            if (contacto.getNombre().equalsIgnoreCase(nombre)) {
+                return contacto;
+            }
+        }
+        return null;
+    }
+
     public void cerrarSesion() {
         if (LOGGER != null) LOGGER.info("Cerrando sesión para " + (usuarioActual != null ? usuarioActual.getName() : "usuario nulo"));
         usuarioActual = null;
+        contactoActual = null; // Reiniciar el contacto actual al cerrar sesión
+        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al cerrar sesión
     }
 
     public Usuario getUsuarioActual() {
         return usuarioActual;
+    }
+
+    public Contacto getContactoActual() {
+        return contactoActual;
+    }
+
+    public void setContactoActual(Contacto contacto) {
+        this.contactoActual = contacto;
+        notifyObserversContacto(contacto); // Notificar a los observadores sobre el cambio de contacto
     }
 
     public List<ContactoIndividual> obtenerContactos() {
@@ -142,7 +169,7 @@ public class Controlador {
         String clave = generarClaveConversacion(contacto);
         mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("Tú: " + mensaje);
         if (LOGGER != null) LOGGER.info("Mensaje enviado a " + contacto.getNombre() + ": " + mensaje);
-        notifyObservers();
+        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes después de enviar un mensaje
     }
 
     public List<String> obtenerMensajes(Contacto contacto) {
@@ -176,15 +203,25 @@ public class Controlador {
         }
         contactos.add(contacto);
         if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " agregado exitosamente.");
+        
+        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes
+        notifyObserversListaContactos(); // Notificar cambios en la lista de contactos
+
         return true;
     }
+    private void notifyObserversListaContactos() {
+        for (Observer observer : observers) {
+            observer.updateListaContactos();
+        }
+    }
+
 
     public void eliminarContacto(ContactoIndividual contacto) {
         if (contacto != null && contactos.remove(contacto)) {
             String clave = generarClaveConversacion(contacto);
             mensajes.remove(clave);
             if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " eliminado.");
-            notifyObservers();
+            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al eliminar un contacto
         }
     }
 
@@ -198,7 +235,7 @@ public class Controlador {
                 // Nota: Necesitarías un setter en Usuario para asignar esta lista, o inicializarla en el constructor
             }
             userContactos.add(contacto);
-            notifyObservers();
+            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al agregar un nuevo contacto
         }
         return added;
     }
@@ -214,6 +251,7 @@ public class Controlador {
         usuariosSimulados.put(nombreUsuario, nuevoUsuario);
         if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " registrado exitosamente.");
         JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al registrar un usuario
         return true;
     }
 
