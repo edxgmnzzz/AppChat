@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
-import umu.tds.app.AppChat.Observer;
+
 /**
  * Clase Controlador que implementa el patrón Singleton y Subject para gestionar usuarios,
  * contactos y mensajes en la aplicación AppChat.
@@ -33,11 +33,12 @@ public class Controlador {
     }
 
     private Map<String, Usuario> usuariosSimulados;
-    private List<ContactoIndividual> contactos;
+    private List<Contacto> contactos; // Already updated to List<Contacto>
     private Map<String, List<String>> mensajes;
     private Usuario usuarioActual;
-    private Contacto contactoActual; // Nuevo campo para el contacto actual
-    private List<Observer> observers;
+    private Contacto contactoActual;
+    private List<ObserverChats> observersChats;
+    private List<ObserverContactos> observersContactos;
 
     private Controlador() {
         initialize();
@@ -47,7 +48,8 @@ public class Controlador {
         usuariosSimulados = new HashMap<>();
         contactos = new ArrayList<>();
         mensajes = new HashMap<>();
-        observers = new ArrayList<>();
+        observersChats = new ArrayList<>();
+        observersContactos = new ArrayList<>();
 
         String defaultImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Florentino_perez.jpg/220px-Florentino_perez.jpg";
         ImageIcon profileIcon = loadImageFromUrl(defaultImageUrl);
@@ -91,24 +93,38 @@ public class Controlador {
         return instancia;
     }
 
-    public void addObserver(Observer observer) {
-        observers.add(observer);
+    public void addObserverChats(ObserverChats observer) {
+        observersChats.add(observer);
     }
 
-    public void removeObserver(Observer observer) {
-        observers.remove(observer);
+    public void removeObserverChats(ObserverChats observer) {
+        observersChats.remove(observer);
     }
 
     private void notifyObserversChatsRecientes() {
         String[] chatsRecientes = getChatsRecientes();
-        for (Observer observer : observers) {
+        for (ObserverChats observer : observersChats) {
             observer.updateChatsRecientes(chatsRecientes);
         }
     }
 
-    private void notifyObserversContacto(Contacto contacto) {
-        for (Observer observer : observers) {
+    private void notifyObserversContactoActual(Contacto contacto) {
+        for (ObserverChats observer : observersChats) {
             observer.updateContactoActual(contacto);
+        }
+    }
+
+    public void addObserverContactos(ObserverContactos observer) {
+        observersContactos.add(observer);
+    }
+
+    public void removeObserverContactos(ObserverContactos observer) {
+        observersContactos.remove(observer);
+    }
+
+    private void notifyObserversListaContactos() {
+        for (ObserverContactos observer : observersContactos) {
+            observer.updateListaContactos();
         }
     }
 
@@ -121,7 +137,7 @@ public class Controlador {
         if (usuario != null && usuario.getPassword().equals(password)) {
             usuarioActual = usuario;
             if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " ha iniciado sesión.");
-            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al iniciar sesión
+            notifyObserversChatsRecientes();
             return true;
         }
         if (LOGGER != null) LOGGER.warning("Credenciales incorrectas para " + nombreUsuario);
@@ -140,8 +156,8 @@ public class Controlador {
     public void cerrarSesion() {
         if (LOGGER != null) LOGGER.info("Cerrando sesión para " + (usuarioActual != null ? usuarioActual.getName() : "usuario nulo"));
         usuarioActual = null;
-        contactoActual = null; // Reiniciar el contacto actual al cerrar sesión
-        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al cerrar sesión
+        contactoActual = null;
+        notifyObserversChatsRecientes();
     }
 
     public Usuario getUsuarioActual() {
@@ -154,10 +170,10 @@ public class Controlador {
 
     public void setContactoActual(Contacto contacto) {
         this.contactoActual = contacto;
-        notifyObserversContacto(contacto); // Notificar a los observadores sobre el cambio de contacto
+        notifyObserversContactoActual(contacto);
     }
 
-    public List<ContactoIndividual> obtenerContactos() {
+    public List<Contacto> obtenerContactos() {
         return Collections.unmodifiableList(contactos);
     }
 
@@ -169,7 +185,7 @@ public class Controlador {
         String clave = generarClaveConversacion(contacto);
         mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("Tú: " + mensaje);
         if (LOGGER != null) LOGGER.info("Mensaje enviado a " + contacto.getNombre() + ": " + mensaje);
-        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes después de enviar un mensaje
+        notifyObserversChatsRecientes();
     }
 
     public List<String> obtenerMensajes(Contacto contacto) {
@@ -186,7 +202,7 @@ public class Controlador {
 
     public String[] getChatsRecientes() {
         List<String> chats = new ArrayList<>();
-        for (ContactoIndividual contacto : contactos) {
+        for (Contacto contacto : contactos) {
             String clave = generarClaveConversacion(contacto);
             if (mensajes.containsKey(clave) && !mensajes.get(clave).isEmpty()) {
                 chats.add("Chat con " + contacto.getNombre());
@@ -197,31 +213,39 @@ public class Controlador {
     }
 
     public boolean agregarContacto(ContactoIndividual contacto) {
-        if (contacto == null || contactos.stream().anyMatch(c -> c.getMovil() == contacto.getMovil())) {
-            if (LOGGER != null) LOGGER.warning("Intento de agregar contacto inválido o duplicado: " + (contacto != null ? contacto.getNombre() : "null"));
+        if (contacto == null) {
+            if (LOGGER != null) LOGGER.warning("Intento de agregar contacto nulo.");
             return false;
         }
+
+        // Check for duplicates: for ContactoIndividual, use movil; for others, use nombre
+        boolean isDuplicate = contactos.stream().anyMatch(c -> {
+            if (c instanceof ContactoIndividual) {
+                return ((ContactoIndividual) c).getMovil() == contacto.getMovil();
+            } else {
+                return c.getNombre().equalsIgnoreCase(contacto.getNombre());
+            }
+        });
+
+        if (isDuplicate) {
+            if (LOGGER != null) LOGGER.warning("Intento de agregar contacto duplicado: " + contacto.getNombre());
+            return false;
+        }
+
         contactos.add(contacto);
         if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " agregado exitosamente.");
         
-        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes
-        notifyObserversListaContactos(); // Notificar cambios en la lista de contactos
-
+        notifyObserversChatsRecientes();
+        notifyObserversListaContactos();
         return true;
     }
-    private void notifyObserversListaContactos() {
-        for (Observer observer : observers) {
-            observer.updateListaContactos();
-        }
-    }
-
 
     public void eliminarContacto(ContactoIndividual contacto) {
         if (contacto != null && contactos.remove(contacto)) {
             String clave = generarClaveConversacion(contacto);
             mensajes.remove(clave);
             if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " eliminado.");
-            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al eliminar un contacto
+            notifyObserversChatsRecientes();
         }
     }
 
@@ -230,14 +254,48 @@ public class Controlador {
         if (added && usuarioActual != null) {
             List<Contacto> userContactos = usuarioActual.getContactos();
             if (userContactos == null) {
-                // Esto no debería ser necesario con el cambio en Usuario, pero lo dejo como medida de seguridad
                 userContactos = new ArrayList<>();
-                // Nota: Necesitarías un setter en Usuario para asignar esta lista, o inicializarla en el constructor
             }
             userContactos.add(contacto);
-            notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al agregar un nuevo contacto
+            notifyObserversChatsRecientes();
+            notifyObserversListaContactos();
         }
         return added;
+    }
+
+    public void crearGrupo(String nombre, List<ContactoIndividual> miembros) {
+        if (usuarioActual == null) {
+            if (LOGGER != null) LOGGER.warning("No hay usuario autenticado para crear un grupo.");
+            JOptionPane.showMessageDialog(null, "Debes estar autenticado para crear un grupo.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) {
+            if (LOGGER != null) LOGGER.warning("Intento de crear grupo inválido: nombre o miembros nulos o vacíos.");
+            JOptionPane.showMessageDialog(null, "El nombre y los miembros son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) {
+            if (LOGGER != null) LOGGER.warning("Ya existe un contacto o grupo con el nombre: " + nombre);
+            JOptionPane.showMessageDialog(null, "Ya existe un contacto o grupo con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Create a defensive copy of miembros to avoid external modifications
+        List<ContactoIndividual> miembrosCopia = new ArrayList<>(miembros);
+        Grupo nuevoGrupo = new Grupo(nombre, miembrosCopia, usuarioActual); // Current user as admin
+        contactos.add(nuevoGrupo);
+        
+        // Add the group to the current user's contact list
+        List<Contacto> userContactos = usuarioActual.getContactos();
+        if (userContactos == null) {
+            userContactos = new ArrayList<>();
+        }
+        userContactos.add(nuevoGrupo);
+
+        if (LOGGER != null) LOGGER.info("Grupo " + nombre + " creado con " + miembros.size() + " miembros por " + usuarioActual.getName());
+        
+        notifyObserversChatsRecientes();
+        notifyObserversListaContactos();
     }
 
     public boolean registrarUsuario(String nombreReal, String nombreUsuario, String password, String confirmarPassword,
@@ -251,7 +309,7 @@ public class Controlador {
         usuariosSimulados.put(nombreUsuario, nuevoUsuario);
         if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " registrado exitosamente.");
         JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-        notifyObserversChatsRecientes(); // Notificar cambios en chats recientes al registrar un usuario
+        notifyObserversChatsRecientes();
         return true;
     }
 

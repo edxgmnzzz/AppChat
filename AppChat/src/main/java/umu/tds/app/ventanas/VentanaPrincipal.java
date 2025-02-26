@@ -6,9 +6,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.Observer;
+import umu.tds.app.AppChat.ObserverChats;
 
-public class VentanaPrincipal extends JFrame implements Observer {
+public class VentanaPrincipal extends JFrame implements ObserverChats {
     private static final long serialVersionUID = 1L;
     private VentanaChatsRecientes chatsRecientes;
     private VentanaChatActual chatActual;
@@ -17,7 +17,7 @@ public class VentanaPrincipal extends JFrame implements Observer {
 
     public VentanaPrincipal() {
         controlador = Controlador.getInstancia();
-        controlador.addObserver(this); // Registrarse como observer
+        controlador.addObserverChats(this); // Registrarse como observer
         
         setTitle("AppChat");
         setSize(800, 600);
@@ -35,6 +35,10 @@ public class VentanaPrincipal extends JFrame implements Observer {
         add(splitPane, BorderLayout.CENTER);
 
         agregarEventos();
+
+        // Finalize initialization after all components are added
+        setVisible(true); // Ensure the frame is visible and components are laid out
+        ventanaSuperior.inicializarContactoActual(); // Set initial contactoActual safely
     }
 
     private void agregarEventos() {
@@ -62,13 +66,8 @@ public class VentanaPrincipal extends JFrame implements Observer {
 
     @Override
     public void updateContactoActual(Contacto contacto) {
-        // Actualizar el chat actual en VentanaChatActual cuando cambie el contacto
-        chatActual.updateChat();
+        if (chatActual != null) { // Add null check to prevent NPE
+            chatActual.updateChat();
+        }
     }
-
-	@Override
-	public void updateListaContactos() {
-		// TODO Auto-generated method stub
-		
-	}
 }
