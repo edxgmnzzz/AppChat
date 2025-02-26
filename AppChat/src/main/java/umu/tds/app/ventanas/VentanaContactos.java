@@ -2,15 +2,16 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import umu.tds.app.AppChat.Contacto;
-import umu.tds.app.AppChat.ContactoIndividual;
-import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.Observer;
+import java.util.ArrayList;
 import java.util.List;
 
-public class VentanaContactos extends JFrame implements Observer {
+import umu.tds.app.AppChat.Contacto;
+import umu.tds.app.AppChat.ContactoIndividual;
+import umu.tds.app.AppChat.Grupo;  // Assuming this is the import for Grupo
+import umu.tds.app.AppChat.Controlador;
+import umu.tds.app.AppChat.ObserverContactos;
+
+public class VentanaContactos extends JFrame implements ObserverContactos {
     private static final long serialVersionUID = 1L;
     private JList<String> contactList;
     private JList<String> groupList;
@@ -18,7 +19,7 @@ public class VentanaContactos extends JFrame implements Observer {
 
     public VentanaContactos(JFrame parent) {
         controlador = Controlador.getInstancia();
-        controlador.addObserver(this); // Registrarse como observador
+        controlador.addObserverContactos(this); // Register as observer
 
         setTitle("Contactos");
         setSize(500, 500);
@@ -27,31 +28,36 @@ public class VentanaContactos extends JFrame implements Observer {
 
         JPanel mainPanel = new JPanel(new GridLayout(1, 3, 10, 10));
 
-        // Panel izquierdo - Lista de contactos
-        contactList = new JList<>(convertirContactosAArray(controlador.obtenerContactos()));
+        // Left Panel - Individual Contacts List
+        contactList = new JList<>(convertirContactosIndividualesAArray(controlador.obtenerContactos()));
         JScrollPane contactScrollPane = new JScrollPane(contactList);
         JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("Lista Contactos"));
+        leftPanel.setBorder(BorderFactory.createTitledBorder("Contactos Individuales"));
         leftPanel.add(contactScrollPane, BorderLayout.CENTER);
         JButton addContactButton = new JButton("Añadir Contacto");
         addContactButton.addActionListener(e -> new VentanaNuevoContacto(this));
         leftPanel.add(addContactButton, BorderLayout.SOUTH);
 
-        // Panel central - Botones de mover
+        // Center Panel - Move Buttons
         JPanel centerPanel = new JPanel(new GridLayout(2, 1, 5, 5));
         JButton moveRightButton = new JButton(">>");
         JButton moveLeftButton = new JButton("<<");
         centerPanel.add(moveRightButton);
         centerPanel.add(moveLeftButton);
 
-        // Panel derecho - Lista de grupos (por ahora usamos un placeholder)
-        groupList = new JList<>(new String[]{"Grupo 1", "Grupo 2"});
+        // Right Panel - Groups List
+        groupList = new JList<>(convertirGruposAArray(controlador.obtenerContactos()));
         JScrollPane groupScrollPane = new JScrollPane(groupList);
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createTitledBorder("Grupos"));
         rightPanel.add(groupScrollPane, BorderLayout.CENTER);
         JButton addGroupButton = new JButton("Añadir Grupo");
+        addGroupButton.addActionListener(e -> new VentanaNuevoGrupo(this)); // Assuming a window for creating groups
         rightPanel.add(addGroupButton, BorderLayout.SOUTH);
+
+        // Button actions for moving contacts to groups or vice versa
+        moveRightButton.addActionListener(e -> moverContactoAGrupo());
+        moveLeftButton.addActionListener(e -> moverGrupoAContacto());
 
         mainPanel.add(leftPanel);
         mainPanel.add(centerPanel);
@@ -63,42 +69,74 @@ public class VentanaContactos extends JFrame implements Observer {
         setVisible(true);
     }
 
-    private String[] convertirContactosAArray(List<ContactoIndividual> contactos) {
-        String[] array = new String[contactos.size()];
-        for (int i = 0; i < contactos.size(); i++) {
-            array[i] = "Chat con " + contactos.get(i).getNombre();
+    private String[] convertirContactosIndividualesAArray(List<Contacto> contactos) {
+        List<String> individuales = new ArrayList<>();
+        for (Contacto c : contactos) {
+            if (c instanceof ContactoIndividual) {
+                individuales.add("Chat con " + c.getNombre());
+            }
         }
-        return array;
+        return individuales.toArray(new String[0]);
     }
 
-    @Override
-    public void updateChatsRecientes(String[] chatsRecientes) {
-        // Actualizar la lista de contactos con los chats recientes
-        contactList.setListData(chatsRecientes);
-        contactList.revalidate();
-        contactList.repaint();
+    private String[] convertirGruposAArray(List<Contacto> contactos) {
+        List<String> grupos = new ArrayList<>();
+        for (Contacto c : contactos) {
+            if (c instanceof Grupo) {
+                grupos.add("Grupo " + c.getNombre());
+            }
+        }
+        return grupos.toArray(new String[0]);
     }
 
-    @Override
-    public void updateContactoActual(Contacto contacto) {
-        // No necesitamos implementar nada aquí, ya que VentanaContactos
-        // solo muestra la lista de contactos/chats, no el contacto actual
+    private void moverContactoAGrupo() {
+        int selectedContactIndex = contactList.getSelectedIndex();
+        int selectedGroupIndex = groupList.getSelectedIndex();
+        if (selectedContactIndex != -1 && selectedGroupIndex != -1) {
+            List<Contacto> contactos = controlador.obtenerContactos();
+            List<Contacto> individuales = new ArrayList<>();
+            List<Grupo> grupos = new ArrayList<>();
+            for (Contacto c : contactos) {
+                if (c instanceof ContactoIndividual) individuales.add(c);
+                if (c instanceof Grupo) grupos.add((Grupo) c);
+            }
+            ContactoIndividual contacto = (ContactoIndividual) individuales.get(selectedContactIndex);
+            Grupo grupo = grupos.get(selectedGroupIndex);
+            // Assuming Grupo has a method to add members
+            grupo.addIntegrante(contacto); // You need to implement this in Grupo class
+            updateListaContactos(); // Refresh UI
+        }
+    }
+
+    private void moverGrupoAContacto() {
+        // This might not make sense in all contexts, but included for symmetry
+        // Perhaps remove a contact from a group?
+        int selectedGroupIndex = groupList.getSelectedIndex();
+        if (selectedGroupIndex != -1) {
+            List<Contacto> contactos = controlador.obtenerContactos();
+            List<Grupo> grupos = new ArrayList<>();
+            for (Contacto c : contactos) {
+                if (c instanceof Grupo) grupos.add((Grupo) c);
+            }
+            Grupo grupo = grupos.get(selectedGroupIndex);
+            // Logic to remove a member or handle this differently could go here
+            updateListaContactos(); // Refresh UI
+        }
     }
 
     @Override
     public void updateListaContactos() {
         SwingUtilities.invokeLater(() -> {
-            System.out.println("Actualizando lista de contactos en VentanaContactos");
-            List<ContactoIndividual> contactos = controlador.obtenerContactos();
+            System.out.println("Actualizando listas en VentanaContactos");
+            List<Contacto> contactos = controlador.obtenerContactos();
             System.out.println("Contactos obtenidos: " + contactos);
 
-            contactList.setListData(convertirContactosAArray(contactos));
+            contactList.setListData(convertirContactosIndividualesAArray(contactos));
+            groupList.setListData(convertirGruposAArray(contactos));
             contactList.revalidate();
             contactList.repaint();
+            groupList.revalidate();
+            groupList.repaint();
         });
     }
-
-
-
-
 }

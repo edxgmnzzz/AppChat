@@ -1,8 +1,8 @@
 package umu.tds.app.AppChat;
 
 
-public interface Observer {
+public interface ObserverChats {
     void updateChatsRecientes(String[] chatsRecientes);
     void updateContactoActual(Contacto contacto);
-    void updateListaContactos(); // Nuevo método
+    //void updateListaContactos(); // Nuevo método
 }

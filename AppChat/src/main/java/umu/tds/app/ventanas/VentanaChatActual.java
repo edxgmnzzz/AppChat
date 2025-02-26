@@ -8,9 +8,9 @@ import java.util.List;
 import tds.BubbleText;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.Observer;
+import umu.tds.app.AppChat.ObserverChats;
 
-public class VentanaChatActual extends JPanel implements Observer {
+public class VentanaChatActual extends JPanel implements ObserverChats {
     private static final long serialVersionUID = 1L;
     private JPanel chatPanel;
     private JScrollPane chatScrollPane;
@@ -21,7 +21,7 @@ public class VentanaChatActual extends JPanel implements Observer {
 
     public VentanaChatActual() {
         controlador = Controlador.getInstancia();
-        controlador.addObserver(this); // Registrarse como observador
+        controlador.addObserverChats(this); // Registrarse como observador
         setLayout(new BorderLayout());
 
         // Encabezado con el nombre del contacto (fijo en la parte superior)
@@ -116,9 +116,4 @@ public class VentanaChatActual extends JPanel implements Observer {
         }
     }
 
-	@Override
-	public void updateListaContactos() {
-		// TODO Auto-generated method stub
-		
-	}
 }
