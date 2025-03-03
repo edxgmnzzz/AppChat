@@ -9,6 +9,7 @@ import tds.BubbleText;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverChats;
+import umu.tds.app.AppChat.Theme;
 
 public class VentanaChatActual extends JPanel implements ObserverChats {
     private static final long serialVersionUID = 1L;
@@ -21,30 +22,51 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
 
     public VentanaChatActual() {
         controlador = Controlador.getInstancia();
-        controlador.addObserverChats(this); // Registrarse como observador
+        controlador.addObserverChats(this);
         setLayout(new BorderLayout());
+        setBackground(Theme.COLOR_CHAT_BACKGROUND); // Fondo blanco
 
-        // Encabezado con el nombre del contacto (fijo en la parte superior)
+        // Encabezado
         contactLabel = new JLabel("Seleccione un contacto", SwingConstants.CENTER);
-        contactLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        contactLabel.setFont(Theme.FONT_BOLD_LARGE);
+        contactLabel.setForeground(Theme.COLOR_TEXTO);
+        contactLabel.setOpaque(true);
+        contactLabel.setBackground(Theme.COLOR_HEADER);
+        contactLabel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, 0, Theme.PADDING_MEDIUM, 0));
         add(contactLabel, BorderLayout.NORTH);
 
-        // Configurar el panel con tamaño preferido fijo para evitar expansión
+        // Panel de chat
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
-        chatPanel.setBorder(BorderFactory.createEmptyBorder());
+        chatPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
         chatScrollPane = new JScrollPane(chatPanel);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); // Evitar scroll horizontal
+        chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        chatScrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
 
+        // Panel de entrada
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        messageInput = new JTextField();
-        JButton sendButton = new JButton("Enviar");
-        sendButton.addActionListener(new SendButtonListener());
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
+        bottomPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
+        messageInput = new JTextField();
+        messageInput.setFont(Theme.FONT_PLAIN_MEDIUM);
+        messageInput.setBackground(Theme.COLOR_SECUNDARIO);
+        messageInput.setForeground(Theme.COLOR_MESSAGE_TEXT); // Texto negro
         bottomPanel.add(messageInput, BorderLayout.CENTER);
+
+        JButton sendButton = new JButton("Enviar");
+        sendButton.setBackground(Theme.COLOR_HOVER);
+        sendButton.setForeground(Theme.COLOR_TEXTO); // Texto blanco para contraste
+        sendButton.setFont(Theme.FONT_BOLD_MEDIUM);
+        sendButton.setFocusPainted(false);
+        sendButton.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        sendButton.addActionListener(new SendButtonListener());
         bottomPanel.add(sendButton, BorderLayout.EAST);
 
         add(chatScrollPane, BorderLayout.CENTER);
@@ -52,14 +74,12 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
     }
 
     @Override
-    public void updateChatsRecientes(String[] chatsRecientes) {
-        // No necesitamos implementar esto aquí, pero lo dejamos para cumplir con la interfaz
-    }
+    public void updateChatsRecientes(String[] chatsRecientes) {}
 
     @Override
     public void updateContactoActual(Contacto contacto) {
         contactoActual = contacto;
-        updateChat(); // Actualizar el chat con el nuevo contacto
+        updateChat();
     }
 
     public void updateChat() {
@@ -69,9 +89,9 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             List<String> mensajes = controlador.obtenerMensajes(contactoActual);
             for (String mensaje : mensajes) {
                 if (mensaje.startsWith("Tú: ")) {
-                    addMessageBubble(mensaje.substring(4), Color.GREEN, controlador.getNombreUserActual(), BubbleText.SENT);
+                    addMessageBubble(mensaje.substring(4), Theme.COLOR_BUBBLE_SENT, controlador.getNombreUserActual(), BubbleText.SENT);
                 } else {
-                    addMessageBubble(mensaje, Color.LIGHT_GRAY, contactoActual.getNombre(), BubbleText.RECEIVED);
+                    addMessageBubble(mensaje, Theme.COLOR_BUBBLE_RECEIVED, contactoActual.getNombre(), BubbleText.RECEIVED);
                 }
             }
         } else {
@@ -88,6 +108,8 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
 
     private void addMessageBubble(String message, Color color, String author, int type) {
         BubbleText bubble = new BubbleText(chatPanel, message, color, author, type);
+        // Asegurar que el texto dentro de BubbleText sea negro
+        bubble.setForeground(Theme.COLOR_MESSAGE_TEXT); // Ajusta si BubbleText lo permite
         chatPanel.add(bubble);
         chatPanel.revalidate();
         chatPanel.repaint();
@@ -106,7 +128,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             if (contactoActual != null && !messageInput.getText().trim().isEmpty()) {
                 String mensaje = messageInput.getText().trim();
                 controlador.enviarMensaje(contactoActual, mensaje);
-                addMessageBubble(mensaje, Color.GREEN, controlador.getNombreUserActual(), BubbleText.SENT);
+                addMessageBubble(mensaje, Theme.COLOR_BUBBLE_SENT, controlador.getNombreUserActual(), BubbleText.SENT);
                 messageInput.setText("");
             } else {
                 JOptionPane.showMessageDialog(VentanaChatActual.this,
@@ -115,5 +137,4 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             }
         }
     }
-
 }

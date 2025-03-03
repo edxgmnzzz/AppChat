@@ -1,10 +1,13 @@
 package umu.tds.app.ventanas;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
+
 import java.awt.*;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverChats;
+import umu.tds.app.AppChat.Theme;
 
 public class VentanaChatsRecientes extends JPanel implements ObserverChats {
     private static final long serialVersionUID = 1L;
@@ -16,11 +19,15 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         controlador.addObserverChats(this);
 
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(300, 600));
-        setBorder(BorderFactory.createTitledBorder("Chats"));
+        setBackground(Theme.COLOR_FONDO);
+        setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL), "Chats", 
+            TitledBorder.CENTER, TitledBorder.TOP, Theme.FONT_BOLD_MEDIUM, Theme.COLOR_TEXTO));
 
         chatList = new JList<>(controlador.getChatsRecientes());
-        chatList.setCellRenderer(new CustomChatListRenderer()); // Añadir renderer personalizado para color
+        chatList.setCellRenderer(new CustomChatListRenderer());
+        chatList.setBackground(Theme.COLOR_SECUNDARIO);
+        chatList.setForeground(Theme.COLOR_PRINCIPAL);
+
         chatList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 String nombreChatSeleccionado = chatList.getSelectedValue();
@@ -28,17 +35,16 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
                     String nombreContacto = nombreChatSeleccionado.replace("Chat con ", "");
                     Contacto contacto = controlador.obtenerContactoPorNombre(nombreContacto);
                     if (contacto != null) {
-                        controlador.setContactoActual(contacto); // Notificar al Controlador el cambio de contacto
+                        controlador.setContactoActual(contacto);
                     }
                 }
             }
         });
 
         JScrollPane scrollPane = new JScrollPane(chatList);
-        scrollPane.setPreferredSize(new Dimension(280, 500));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         add(scrollPane, BorderLayout.CENTER);
 
-        // Sincronizar con el contacto actual inicial
         sincronizarSeleccionConContactoActual();
     }
 
@@ -49,7 +55,7 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
     public void actualizarLista(String[] chatsRecientes) {
         SwingUtilities.invokeLater(() -> {
             chatList.setListData(chatsRecientes);
-            sincronizarSeleccionConContactoActual(); // Mantener sincronización tras actualizar
+            sincronizarSeleccionConContactoActual();
             chatList.revalidate();
             chatList.repaint();
         });
@@ -59,9 +65,9 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         Contacto contactoActual = controlador.getContactoActual();
         if (contactoActual != null) {
             String chatSeleccionado = "Chat con " + contactoActual.getNombre();
-            chatList.setSelectedValue(chatSeleccionado, true); // Seleccionar y hacer visible
+            chatList.setSelectedValue(chatSeleccionado, true);
         } else if (chatList.getModel().getSize() > 0 && !chatList.getModel().getElementAt(0).equals("No hay chats recientes")) {
-            chatList.setSelectedIndex(0); // Seleccionar el primero si no hay contacto actual
+            chatList.setSelectedIndex(0);
         }
     }
 
@@ -72,21 +78,22 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
 
     @Override
     public void updateContactoActual(Contacto contacto) {
-        sincronizarSeleccionConContactoActual(); // Sincronizar cuando cambie el contacto actual
+        sincronizarSeleccionConContactoActual();
     }
 
-    // Custom renderer para añadir color a la selección
     private class CustomChatListRenderer extends DefaultListCellRenderer {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
                                                       boolean isSelected, boolean cellHasFocus) {
             Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (isSelected) {
-                c.setBackground(new Color(173, 216, 230)); // Mismo color que VentanaSuperior
-                c.setForeground(Color.BLACK); // Texto legible
+                c.setBackground(Theme.COLOR_HOVER);
+                c.setForeground(Theme.COLOR_TEXTO);
             } else {
-                c.setBackground(list.getBackground());
-                c.setForeground(list.getForeground());
+                c.setBackground(Theme.COLOR_SECUNDARIO);
+                c.setForeground(Theme.COLOR_PRINCIPAL);
             }
             return c;
         }
