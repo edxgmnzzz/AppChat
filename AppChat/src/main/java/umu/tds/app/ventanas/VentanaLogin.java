@@ -23,10 +23,10 @@ public class VentanaLogin extends JFrame {
     }
 
     private void initializeUI() {
-    	abrirVentanaPrincipal();
-//        configurarVentana();
-//        crearComponentes();
-//        addKeyListeners();
+    	//abrirVentanaPrincipal();
+        configurarVentana();
+        crearComponentes();
+        addKeyListeners();
     }
 
     private void configurarVentana() {

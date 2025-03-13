@@ -9,6 +9,10 @@ import umu.tds.app.AppChat.Controlador;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.io.File;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.*;
 
 public class VentanaRegistro extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -31,7 +35,7 @@ public class VentanaRegistro extends JFrame {
     private JPasswordField campoConfirmarPassword;
     private JTextComponent campoTelefono;
     private JDateChooser campoFechaNacimiento;
-    private JTextComponent campoRutaFoto;
+    private JTextField campoRutaFoto;
     private Point initialClick;
 
     public VentanaRegistro() {
@@ -82,7 +86,19 @@ public class VentanaRegistro extends JFrame {
         campoTelefono = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
         campoFechaNacimiento = new JDateChooser(); // Para la fecha de nacimiento
         campoFechaNacimiento.setBackground(COLOR_FONDO);
+        
+        // Panel para la ruta de foto con botón de selección y soporte para drag & drop
+        JPanel panelFoto = new JPanel(new BorderLayout());
+        panelFoto.setOpaque(false);
         campoRutaFoto = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
+        
+        // Configurar drag and drop para el campo de ruta de foto
+        configurarDragAndDrop(campoRutaFoto);
+        
+        JButton botonSeleccionarFoto = new JButton("...");
+        botonSeleccionarFoto.addActionListener(e -> seleccionarFoto());
+        panelFoto.add(campoRutaFoto, BorderLayout.CENTER);
+        panelFoto.add(botonSeleccionarFoto, BorderLayout.EAST);
 
         // Agregar los campos al formulario
         gbc.gridx = 0;
@@ -97,7 +113,7 @@ public class VentanaRegistro extends JFrame {
         gbc.gridx = 1;
         panelCampos.add(campoUsuario, gbc);
 
-        gbc.gridx = 1;
+        gbc.gridx = 0;
         gbc.gridy = 2;
         panelCampos.add(crearLabel("Password:", 14, COLOR_SECUNDARIO), gbc);
         gbc.gridx = 1;
@@ -131,7 +147,7 @@ public class VentanaRegistro extends JFrame {
         gbc.gridy = 7;
         panelCampos.add(crearLabel("Ruta Foto:", 14, COLOR_SECUNDARIO), gbc);
         gbc.gridx = 1;
-        panelCampos.add(campoRutaFoto, gbc);
+        panelCampos.add(panelFoto, gbc);
 
         panelContenido.add(panelCampos);
 
@@ -146,6 +162,57 @@ public class VentanaRegistro extends JFrame {
         panelPrincipal.add(panelContenido, BorderLayout.CENTER);
         add(panelPrincipal);
     }
+    
+    private void seleccionarFoto() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos de imagen", "jpg", "jpeg", "png", "gif"));
+        
+        int resultado = fileChooser.showOpenDialog(this);
+        if (resultado == JFileChooser.APPROVE_OPTION) {
+            File archivoSeleccionado = fileChooser.getSelectedFile();
+            campoRutaFoto.setText(archivoSeleccionado.getAbsolutePath());
+        }
+    }
+    
+    private void configurarDragAndDrop(JTextField campo) {
+        new DropTarget(campo, new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetDropEvent dtde) {
+                try {
+                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
+                    @SuppressWarnings("unchecked")
+                    java.util.List<File> files = (java.util.List<File>) dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    
+                    if (!files.isEmpty()) {
+                        File file = files.get(0);
+                        String extension = getFileExtension(file);
+                        if (extension != null && (extension.equals("jpg") || extension.equals("jpeg") || 
+                                                  extension.equals("png") || extension.equals("gif"))) {
+                            campo.setText(file.getAbsolutePath());
+                        } else {
+                            JOptionPane.showMessageDialog(VentanaRegistro.this, 
+                                                          "Solo se permiten archivos de imagen (jpg, jpeg, png, gif)", 
+                                                          "Formato no válido", JOptionPane.WARNING_MESSAGE);
+                        }
+                    }
+                    
+                    dtde.dropComplete(true);
+                } catch (Exception e) {
+                    dtde.dropComplete(false);
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+    
+    private String getFileExtension(File file) {
+        String name = file.getName();
+        int lastIndexOf = name.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return null;
+        }
+        return name.substring(lastIndexOf + 1).toLowerCase();
+    }
 
     private void registrarUsuario() {
         String nombreReal = campoNombreReal.getText();  
@@ -153,7 +220,15 @@ public class VentanaRegistro extends JFrame {
         String password = new String(campoPassword.getPassword());
         String confirmarPassword = new String(campoConfirmarPassword.getPassword());  
         String email = campoEmail.getText();
-        int telefono = Integer.parseInt(campoTelefono.getText());  
+        int telefono;
+        
+        try {
+            telefono = Integer.parseInt(campoTelefono.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "El teléfono debe ser un número válido", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         Date fechaNacimiento = campoFechaNacimiento.getDate(); 
         
         // Convertir de Date a LocalDate
@@ -187,7 +262,7 @@ public class VentanaRegistro extends JFrame {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(COLOR_PRINCIPAL);
         barraTitulo.setPreferredSize(new Dimension(WINDOW_WIDTH, 30));
-        barraTitulo.add(new JLabel("  Login", JLabel.LEFT), BorderLayout.WEST);
+        barraTitulo.add(new JLabel("  Registro", JLabel.LEFT), BorderLayout.WEST);
 
         JPanel botonesControl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         botonesControl.setOpaque(false);
@@ -278,7 +353,6 @@ public class VentanaRegistro extends JFrame {
         boton.addActionListener(accion);
         return boton;
     }
-
 
     private JLabel crearLabel(String texto, int tamanoFuente, Color colorTexto) {
         JLabel label = new JLabel(texto);
