@@ -29,11 +29,11 @@ public class Usuario {
         this.email = email;
         this.premium = premium;
         this.saludo = Optional.ofNullable(saludo);
-        this.gruposAdmin = gruposAdmin != null ? gruposAdmin : new ArrayList<>(); // Inicializar si null
-        this.contactos = contactos != null ? contactos : new ArrayList<>(); // Inicializar si null
+        this.gruposAdmin = gruposAdmin != null ? gruposAdmin : new ArrayList<>();
+        this.contactos = contactos != null ? contactos : new ArrayList<>();
     }
 
-    // Getters necesarios
+    // Getters
     public ImageIcon getProfilePhotos() { return profilePhoto; }
     public String getName() { return name; }
     public String getPassword() { return password; }
@@ -41,4 +41,22 @@ public class Usuario {
     public int getNumTelefono() { return numTelefono; }
     public List<Contacto> getContactos() { return contactos; }
     public boolean isPremium() { return premium; }
+    public Optional<String> getSaludo() { return saludo; }
+
+    // Setters for editable fields
+    public void setProfilePhoto(ImageIcon profilePhoto) {
+        this.profilePhoto = profilePhoto;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setSaludo(String saludo) {
+        this.saludo = Optional.ofNullable(saludo);
+    }
 }

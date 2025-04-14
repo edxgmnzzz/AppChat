@@ -6,10 +6,10 @@ import java.awt.*;
 public class VentanaBusqueda extends JFrame {
     private static final long serialVersionUID = 1L;
 
-	public VentanaBusqueda(JFrame parent) {
+	public VentanaBusqueda(VentanaSuperior ventana) {
         setTitle("Buscar");
         setSize(500, 500);
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(ventana);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel searchPanel = new JPanel(new GridBagLayout());

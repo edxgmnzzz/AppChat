@@ -17,13 +17,13 @@ public class VentanaContactos extends JFrame implements ObserverContactos {
     private JList<String> groupList;
     private Controlador controlador;
 
-    public VentanaContactos(JFrame parent) {
+    public VentanaContactos(VentanaSuperior ventana) {
         controlador = Controlador.getInstancia();
         controlador.addObserverContactos(this); // Register as observer
 
         setTitle("Contactos");
         setSize(500, 500);
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(ventana);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel mainPanel = new JPanel(new GridLayout(1, 3, 10, 10));

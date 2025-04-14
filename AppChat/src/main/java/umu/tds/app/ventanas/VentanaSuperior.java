@@ -17,9 +17,10 @@ import java.util.List;
 public class VentanaSuperior extends JPanel implements ObserverChats, ObserverContactos {
     private static final long serialVersionUID = 1L;
     private JComboBox<String> contactos;
-    private JButton searchButton, contactsButton, premiumButton;
+    private JButton searchButton, contactsButton, premiumButton, settingsButton;
     private JLabel userLabel, userImage;
     private Controlador controlador;
+    private static final int DISPLAY_IMAGE_SIZE = 50;
 
     public VentanaSuperior() {
         controlador = Controlador.getInstancia();
@@ -50,14 +51,16 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             }
         });
 
-        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(null));
-        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(null));
+        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(this));
+        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(this));
         premiumButton = createStyledButton("Premium", e -> JOptionPane.showConfirmDialog(this, "¿Quieres hacerte Premium socio?"));
+        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(this));
 
         optionsPanel.add(contactos);
         optionsPanel.add(searchButton);
         optionsPanel.add(contactsButton);
         optionsPanel.add(premiumButton);
+        optionsPanel.add(settingsButton);
 
         add(optionsPanel, BorderLayout.WEST);
 
@@ -65,8 +68,13 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         JPanel userPanel = new JPanel(new BorderLayout());
         userPanel.setOpaque(false);
 
-        userImage = new JLabel(controlador.getIconoUserActual());
+        ImageIcon originalIcon = controlador.getIconoUserActual();
+        ImageIcon scaledIcon = originalIcon.getImage() != null 
+            ? new ImageIcon(originalIcon.getImage().getScaledInstance(DISPLAY_IMAGE_SIZE, DISPLAY_IMAGE_SIZE, Image.SCALE_SMOOTH))
+            : new ImageIcon();
+        userImage = new JLabel(scaledIcon);
         userImage.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        userImage.setPreferredSize(new Dimension(DISPLAY_IMAGE_SIZE, DISPLAY_IMAGE_SIZE));
         userPanel.add(userImage, BorderLayout.CENTER);
 
         userLabel = new JLabel(controlador.getNombreUserActual());
@@ -133,7 +141,14 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
     }
 
     @Override
-    public void updateChatsRecientes(String[] chatsRecientes) {}
+    public void updateChatsRecientes(String[] chatsRecientes) {
+        userLabel.setText(controlador.getNombreUserActual());
+        ImageIcon originalIcon = controlador.getIconoUserActual();
+        ImageIcon scaledIcon = originalIcon.getImage() != null 
+            ? new ImageIcon(originalIcon.getImage().getScaledInstance(DISPLAY_IMAGE_SIZE, DISPLAY_IMAGE_SIZE, Image.SCALE_SMOOTH))
+            : new ImageIcon();
+        userImage.setIcon(scaledIcon);
+    }
 
     @Override
     public void updateContactoActual(Contacto contacto) {
