@@ -1,6 +1,8 @@
 package umu.tds.app.AppChat;
 
+import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -13,7 +15,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JOptionPane;
 
 /**
  * Clase Controlador que implementa el patrón Singleton y Subject para gestionar usuarios,
@@ -22,6 +23,7 @@ import javax.swing.JOptionPane;
 public class Controlador {
     private static final Controlador instancia;
     private static final Logger LOGGER;
+    private static final int PROFILE_IMAGE_SIZE = 100; // Fixed size for profile images (100x100 pixels)
 
     static {
         LOGGER = Logger.getLogger(Controlador.class.getName());
@@ -33,7 +35,7 @@ public class Controlador {
     }
 
     private Map<String, Usuario> usuariosSimulados;
-    private List<Contacto> contactos; // Already updated to List<Contacto>
+    private List<Contacto> contactos;
     private Map<String, List<String>> mensajes;
     private Usuario usuarioActual;
     private Contacto contactoActual;
@@ -78,13 +80,37 @@ public class Controlador {
             URL url = uri.toURL();
             BufferedImage image = ImageIO.read(url);
             if (image != null) {
-                if (LOGGER != null) LOGGER.info("Imagen cargada exitosamente desde: " + urlString);
-                return new ImageIcon(image);
+                ImageIcon icon = new ImageIcon(image);
+                Image scaledImage = icon.getImage().getScaledInstance(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE, Image.SCALE_SMOOTH);
+                LOGGER.info("Imagen cargada y redimensionada desde URL: " + urlString);
+                return new ImageIcon(scaledImage);
             } else {
-                if (LOGGER != null) LOGGER.warning("No se pudo cargar la imagen desde: " + urlString);
+                LOGGER.warning("No se pudo cargar la imagen desde URL: " + urlString);
             }
         } catch (Exception e) {
-            if (LOGGER != null) LOGGER.severe("Error al cargar imagen desde " + urlString + ": " + e.getMessage());
+            LOGGER.severe("Error al cargar imagen desde URL " + urlString + ": " + e.getMessage());
+        }
+        return new ImageIcon();
+    }
+
+    private ImageIcon loadImageFromFile(String filePath) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                LOGGER.warning("Archivo no encontrado: " + filePath);
+                return new ImageIcon();
+            }
+            BufferedImage image = ImageIO.read(file);
+            if (image != null) {
+                ImageIcon icon = new ImageIcon(image);
+                Image scaledImage = icon.getImage().getScaledInstance(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE, Image.SCALE_SMOOTH);
+                LOGGER.info("Imagen cargada y redimensionada desde archivo: " + filePath);
+                return new ImageIcon(scaledImage);
+            } else {
+                LOGGER.warning("No se pudo cargar la imagen desde archivo: " + filePath);
+            }
+        } catch (IOException e) {
+            LOGGER.severe("Error al cargar imagen desde archivo " + filePath + ": " + e.getMessage());
         }
         return new ImageIcon();
     }
@@ -130,17 +156,17 @@ public class Controlador {
 
     public boolean iniciarSesion(String nombreUsuario, String password) {
         if (nombreUsuario == null || password == null) {
-            if (LOGGER != null) LOGGER.warning("Intento de inicio de sesión con credenciales nulas.");
+            LOGGER.warning("Intento de inicio de sesión con credenciales nulas.");
             return false;
         }
         Usuario usuario = usuariosSimulados.get(nombreUsuario);
         if (usuario != null && usuario.getPassword().equals(password)) {
             usuarioActual = usuario;
-            if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " ha iniciado sesión.");
+            LOGGER.info("Inicio de sesión exitoso para usuario: " + nombreUsuario);
             notifyObserversChatsRecientes();
             return true;
         }
-        if (LOGGER != null) LOGGER.warning("Credenciales incorrectas para " + nombreUsuario);
+        LOGGER.warning("Credenciales incorrectas para usuario: " + nombreUsuario);
         return false;
     }
 
@@ -154,9 +180,14 @@ public class Controlador {
     }
 
     public void cerrarSesion() {
-        if (LOGGER != null) LOGGER.info("Cerrando sesión para " + (usuarioActual != null ? usuarioActual.getName() : "usuario nulo"));
+        if (usuarioActual == null) {
+            LOGGER.warning("Intento de cerrar sesión sin usuario autenticado.");
+            return;
+        }
+        String nombreUsuario = usuarioActual.getName();
         usuarioActual = null;
         contactoActual = null;
+        LOGGER.info("Sesión cerrada para usuario: " + nombreUsuario);
         notifyObserversChatsRecientes();
     }
 
@@ -179,12 +210,12 @@ public class Controlador {
 
     public void enviarMensaje(Contacto contacto, String mensaje) {
         if (usuarioActual == null || contacto == null || mensaje == null || mensaje.trim().isEmpty()) {
-            if (LOGGER != null) LOGGER.warning("Intento de envío de mensaje inválido.");
+            LOGGER.warning("Intento de envío de mensaje inválido.");
             return;
         }
         String clave = generarClaveConversacion(contacto);
         mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("Tú: " + mensaje);
-        if (LOGGER != null) LOGGER.info("Mensaje enviado a " + contacto.getNombre() + ": " + mensaje);
+        LOGGER.info("Mensaje enviado a " + contacto.getNombre() + ": " + mensaje);
         notifyObserversChatsRecientes();
     }
 
@@ -214,11 +245,10 @@ public class Controlador {
 
     public boolean agregarContacto(ContactoIndividual contacto) {
         if (contacto == null) {
-            if (LOGGER != null) LOGGER.warning("Intento de agregar contacto nulo.");
+            LOGGER.warning("Intento de agregar contacto nulo.");
             return false;
         }
 
-        // Check for duplicates: for ContactoIndividual, use movil; for others, use nombre
         boolean isDuplicate = contactos.stream().anyMatch(c -> {
             if (c instanceof ContactoIndividual) {
                 return ((ContactoIndividual) c).getMovil() == contacto.getMovil();
@@ -228,24 +258,29 @@ public class Controlador {
         });
 
         if (isDuplicate) {
-            if (LOGGER != null) LOGGER.warning("Intento de agregar contacto duplicado: " + contacto.getNombre());
+            LOGGER.warning("Contacto duplicado detectado: " + contacto.getNombre());
             return false;
         }
 
         contactos.add(contacto);
-        if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " agregado exitosamente.");
-        
+        LOGGER.info("Contacto agregado: " + contacto.getNombre());
         notifyObserversChatsRecientes();
         notifyObserversListaContactos();
         return true;
     }
 
     public void eliminarContacto(ContactoIndividual contacto) {
-        if (contacto != null && contactos.remove(contacto)) {
+        if (contacto == null) {
+            LOGGER.warning("Intento de eliminar contacto nulo.");
+            return;
+        }
+        if (contactos.remove(contacto)) {
             String clave = generarClaveConversacion(contacto);
             mensajes.remove(clave);
-            if (LOGGER != null) LOGGER.info("Contacto " + contacto.getNombre() + " eliminado.");
+            LOGGER.info("Contacto eliminado: " + contacto.getNombre());
             notifyObserversChatsRecientes();
+        } else {
+            LOGGER.warning("Contacto no encontrado para eliminar: " + contacto.getNombre());
         }
     }
 
@@ -265,35 +300,29 @@ public class Controlador {
 
     public void crearGrupo(String nombre, List<ContactoIndividual> miembros) {
         if (usuarioActual == null) {
-            if (LOGGER != null) LOGGER.warning("No hay usuario autenticado para crear un grupo.");
-            JOptionPane.showMessageDialog(null, "Debes estar autenticado para crear un grupo.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Intento de crear grupo sin usuario autenticado.");
             return;
         }
         if (nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) {
-            if (LOGGER != null) LOGGER.warning("Intento de crear grupo inválido: nombre o miembros nulos o vacíos.");
-            JOptionPane.showMessageDialog(null, "El nombre y los miembros son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Intento de crear grupo con nombre o miembros inválidos.");
             return;
         }
         if (contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) {
-            if (LOGGER != null) LOGGER.warning("Ya existe un contacto o grupo con el nombre: " + nombre);
-            JOptionPane.showMessageDialog(null, "Ya existe un contacto o grupo con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Nombre de grupo ya existe: " + nombre);
             return;
         }
 
-        // Create a defensive copy of miembros to avoid external modifications
         List<ContactoIndividual> miembrosCopia = new ArrayList<>(miembros);
-        Grupo nuevoGrupo = new Grupo(nombre, miembrosCopia, usuarioActual); // Current user as admin
+        Grupo nuevoGrupo = new Grupo(nombre, miembrosCopia, usuarioActual);
         contactos.add(nuevoGrupo);
         
-        // Add the group to the current user's contact list
         List<Contacto> userContactos = usuarioActual.getContactos();
         if (userContactos == null) {
             userContactos = new ArrayList<>();
         }
         userContactos.add(nuevoGrupo);
 
-        if (LOGGER != null) LOGGER.info("Grupo " + nombre + " creado con " + miembros.size() + " miembros por " + usuarioActual.getName());
-        
+        LOGGER.info("Grupo creado: " + nombre + " con " + miembros.size() + " miembros");
         notifyObserversChatsRecientes();
         notifyObserversListaContactos();
     }
@@ -303,12 +332,20 @@ public class Controlador {
         if (!validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono)) {
             return false;
         }
-        ImageIcon profileIcon = rutaFoto != null && !rutaFoto.isEmpty() ? loadImageFromUrl(rutaFoto) : new ImageIcon();
+        ImageIcon profileIcon;
+        if (rutaFoto != null && !rutaFoto.isEmpty()) {
+            if (rutaFoto.startsWith("http://") || rutaFoto.startsWith("https://")) {
+                profileIcon = loadImageFromUrl(rutaFoto);
+            } else {
+                profileIcon = loadImageFromFile(rutaFoto);
+            }
+        } else {
+            profileIcon = new ImageIcon();
+        }
         Usuario nuevoUsuario = new Usuario(profileIcon, nombreReal, fechaNacimiento, telefono, password, 
                 email, false, "¡Hola, soy nuevo!", null, null);
         usuariosSimulados.put(nombreUsuario, nuevoUsuario);
-        if (LOGGER != null) LOGGER.info("Usuario " + nombreUsuario + " registrado exitosamente.");
-        JOptionPane.showMessageDialog(null, "Usuario registrado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        LOGGER.info("Usuario registrado: " + nombreUsuario);
         notifyObserversChatsRecientes();
         return true;
     }
@@ -316,25 +353,73 @@ public class Controlador {
     private boolean validateRegistration(String nombreReal, String nombreUsuario, String password, 
                                          String confirmarPassword, String email, int telefono) {
         if (nombreReal == null || nombreUsuario == null || password == null || confirmarPassword == null || email == null) {
-            JOptionPane.showMessageDialog(null, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Intento de registro con campos nulos.");
             return false;
         }
         if (!password.equals(confirmarPassword)) {
-            JOptionPane.showMessageDialog(null, "Las contraseñas no coinciden.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Las contraseñas no coinciden para usuario: " + nombreUsuario);
             return false;
         }
         if (usuariosSimulados.containsKey(nombreUsuario)) {
-            JOptionPane.showMessageDialog(null, "El nombre de usuario ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Nombre de usuario ya existe: " + nombreUsuario);
             return false;
         }
         if (usuariosSimulados.values().stream().anyMatch(u -> u.getEmail().equals(email))) {
-            JOptionPane.showMessageDialog(null, "El correo electrónico ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Correo electrónico ya registrado: " + email);
             return false;
         }
         if (usuariosSimulados.values().stream().anyMatch(u -> u.getNumTelefono() == telefono)) {
-            JOptionPane.showMessageDialog(null, "El número de teléfono ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+            LOGGER.warning("Número de teléfono ya registrado: " + telefono);
             return false;
         }
+        return true;
+    }
+
+    public boolean actualizarUsuario(String nuevoNombre, String nuevaPassword, String nuevoSaludo, String rutaFoto) {
+        if (usuarioActual == null) {
+            LOGGER.warning("Intento de actualizar usuario sin estar autenticado.");
+            return false;
+        }
+
+        // Validar nombre único (si cambió)
+        if (!nuevoNombre.equals(usuarioActual.getName()) && usuariosSimulados.containsKey(nuevoNombre)) {
+            LOGGER.warning("Nombre de usuario ya existe: " + nuevoNombre);
+            return false;
+        }
+
+        // Validar contraseña no vacía
+        if (nuevaPassword == null || nuevaPassword.trim().isEmpty()) {
+            LOGGER.warning("La contraseña no puede estar vacía para usuario: " + nuevoNombre);
+            return false;
+        }
+
+        // Actualizar foto de perfil
+        ImageIcon profileIcon;
+        if (rutaFoto != null && !rutaFoto.isEmpty()) {
+            if (rutaFoto.startsWith("http://") || rutaFoto.startsWith("https://")) {
+                profileIcon = loadImageFromUrl(rutaFoto);
+            } else {
+                profileIcon = loadImageFromFile(rutaFoto);
+            }
+        } else {
+            profileIcon = usuarioActual.getProfilePhotos(); // Mantener la foto actual si no se proporciona una nueva
+        }
+
+        // Actualizar datos del usuario
+        String nombreAnterior = usuarioActual.getName();
+        usuarioActual.setName(nuevoNombre);
+        usuarioActual.setPassword(nuevaPassword);
+        usuarioActual.setSaludo(nuevoSaludo);
+        usuarioActual.setProfilePhoto(profileIcon);
+
+        // Actualizar la clave en usuariosSimulados
+        if (!nuevoNombre.equals(nombreAnterior)) {
+            usuariosSimulados.remove(nombreAnterior);
+            usuariosSimulados.put(nuevoNombre, usuarioActual);
+        }
+
+        LOGGER.info("Usuario actualizado: " + nuevoNombre);
+        notifyObserversChatsRecientes(); // Notificar cambios (puede afectar UI)
         return true;
     }
 
