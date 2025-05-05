@@ -2,141 +2,180 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
+import java.awt.event.*;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
-import umu.tds.app.AppChat.Grupo;  // Assuming this is the import for Grupo
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverContactos;
+import umu.tds.app.AppChat.Theme;
 
-public class VentanaContactos extends JFrame implements ObserverContactos {
+public class VentanaContactos extends JDialog implements ObserverContactos {
     private static final long serialVersionUID = 1L;
-    private JList<String> contactList;
-    private JList<String> groupList;
+    private JList<String> contactosList;
     private Controlador controlador;
 
-    public VentanaContactos(VentanaSuperior ventana) {
+    public VentanaContactos() {
         controlador = Controlador.getInstancia();
-        controlador.addObserverContactos(this); // Register as observer
-
-        setTitle("Contactos");
-        setSize(500, 500);
-        setLocationRelativeTo(ventana);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-        JPanel mainPanel = new JPanel(new GridLayout(1, 3, 10, 10));
-
-        // Left Panel - Individual Contacts List
-        contactList = new JList<>(convertirContactosIndividualesAArray(controlador.obtenerContactos()));
-        JScrollPane contactScrollPane = new JScrollPane(contactList);
-        JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBorder(BorderFactory.createTitledBorder("Contactos Individuales"));
-        leftPanel.add(contactScrollPane, BorderLayout.CENTER);
-        JButton addContactButton = new JButton("Añadir Contacto");
-        addContactButton.addActionListener(e -> new VentanaNuevoContacto(this));
-        leftPanel.add(addContactButton, BorderLayout.SOUTH);
-
-        // Center Panel - Move Buttons
-        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-        JButton moveRightButton = new JButton(">>");
-        JButton moveLeftButton = new JButton("<<");
-        centerPanel.add(moveRightButton);
-        centerPanel.add(moveLeftButton);
-
-        // Right Panel - Groups List
-        groupList = new JList<>(convertirGruposAArray(controlador.obtenerContactos()));
-        JScrollPane groupScrollPane = new JScrollPane(groupList);
-        JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Grupos"));
-        rightPanel.add(groupScrollPane, BorderLayout.CENTER);
-        JButton addGroupButton = new JButton("Añadir Grupo");
-        addGroupButton.addActionListener(e -> new VentanaNuevoGrupo(this)); // Assuming a window for creating groups
-        rightPanel.add(addGroupButton, BorderLayout.SOUTH);
-
-        // Button actions for moving contacts to groups or vice versa
-        moveRightButton.addActionListener(e -> moverContactoAGrupo());
-        moveLeftButton.addActionListener(e -> moverGrupoAContacto());
-
-        mainPanel.add(leftPanel);
-        mainPanel.add(centerPanel);
-        mainPanel.add(rightPanel);
-
-        setLayout(new BorderLayout());
-        add(mainPanel, BorderLayout.CENTER);
-
-        setVisible(true);
+        controlador.addObserverContactos(this);
+        configurarVentana();
+        crearComponentes();
     }
 
-    private String[] convertirContactosIndividualesAArray(List<Contacto> contactos) {
-        List<String> individuales = new ArrayList<>();
-        for (Contacto c : contactos) {
-            if (c instanceof ContactoIndividual) {
-                individuales.add("Chat con " + c.getNombre());
-            }
-        }
-        return individuales.toArray(new String[0]);
+
+    private void configurarVentana() {
+        setSize(400, 500);
+        setLocationRelativeTo(getParent());
+        setUndecorated(true);
+        setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 400, 500, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
     }
 
-    private String[] convertirGruposAArray(List<Contacto> contactos) {
-        List<String> grupos = new ArrayList<>();
-        for (Contacto c : contactos) {
-            if (c instanceof Grupo) {
-                grupos.add("Grupo " + c.getNombre());
-            }
-        }
-        return grupos.toArray(new String[0]);
+    private void crearComponentes() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(Theme.COLOR_FONDO);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
+
+        mainPanel.add(crearBarraTitulo(), BorderLayout.NORTH);
+        mainPanel.add(crearPanelContenido(), BorderLayout.CENTER);
+
+        add(mainPanel);
     }
 
-    private void moverContactoAGrupo() {
-        int selectedContactIndex = contactList.getSelectedIndex();
-        int selectedGroupIndex = groupList.getSelectedIndex();
-        if (selectedContactIndex != -1 && selectedGroupIndex != -1) {
-            List<Contacto> contactos = controlador.obtenerContactos();
-            List<Contacto> individuales = new ArrayList<>();
-            List<Grupo> grupos = new ArrayList<>();
-            for (Contacto c : contactos) {
-                if (c instanceof ContactoIndividual) individuales.add(c);
-                if (c instanceof Grupo) grupos.add((Grupo) c);
+    private JPanel crearBarraTitulo() {
+        JPanel barraTitulo = new JPanel(new BorderLayout());
+        barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
+        barraTitulo.setPreferredSize(new Dimension(400, Theme.TITLE_BAR_HEIGHT));
+
+        JLabel labelTitulo = new JLabel("  Gestionar Contactos");
+        labelTitulo.setForeground(Theme.COLOR_SECUNDARIO);
+        labelTitulo.setFont(Theme.FONT_BOLD_MEDIUM);
+        barraTitulo.add(labelTitulo, BorderLayout.WEST);
+
+        JButton cerrarBoton = new JButton("×");
+        cerrarBoton.setPreferredSize(new Dimension(45, Theme.TITLE_BAR_HEIGHT));
+        cerrarBoton.setFocusPainted(false);
+        cerrarBoton.setBorderPainted(false);
+        cerrarBoton.setContentAreaFilled(false);
+        cerrarBoton.setForeground(Theme.COLOR_SECUNDARIO);
+        cerrarBoton.setFont(Theme.FONT_BOLD_MEDIUM);
+        cerrarBoton.addActionListener(e -> dispose());
+        cerrarBoton.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                cerrarBoton.setBackground(Theme.COLOR_ACENTO);
+                cerrarBoton.setContentAreaFilled(true);
             }
-            ContactoIndividual contacto = (ContactoIndividual) individuales.get(selectedContactIndex);
-            Grupo grupo = grupos.get(selectedGroupIndex);
-            // Assuming Grupo has a method to add members
-            grupo.addIntegrante(contacto); // You need to implement this in Grupo class
-            updateListaContactos(); // Refresh UI
+            public void mouseExited(MouseEvent e) {
+                cerrarBoton.setContentAreaFilled(false);
+            }
+        });
+
+        JPanel botonesControl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        botonesControl.setOpaque(false);
+        botonesControl.add(cerrarBoton);
+        barraTitulo.add(botonesControl, BorderLayout.EAST);
+
+        return barraTitulo;
+    }
+
+    private JPanel crearPanelContenido() {
+        JPanel panelContenido = new JPanel(new BorderLayout());
+        panelContenido.setBackground(Theme.COLOR_FONDO);
+
+        contactosList = new JList<>();
+        contactosList.setCellRenderer(new DefaultListCellRenderer() {
+            private static final long serialVersionUID = 1L;
+
+			@Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
+                                                          boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (isSelected) {
+                    c.setBackground(Theme.COLOR_HOVER);
+                    c.setForeground(Theme.COLOR_TEXTO);
+                } else {
+                    c.setBackground(Theme.COLOR_SECUNDARIO);
+                    c.setForeground(Theme.COLOR_PRINCIPAL);
+                }
+                return c;
+            }
+        });
+        contactosList.setBackground(Theme.COLOR_SECUNDARIO);
+        actualizarListaContactos();
+
+        JScrollPane scrollPane = new JScrollPane(contactosList);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
+        panelContenido.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        botonesPanel.setBackground(Theme.COLOR_FONDO);
+
+        JButton agregarContacto = createStyledButton("Agregar Contacto", e -> agregarContacto());
+        JButton eliminarContacto = createStyledButton("Eliminar Contacto", e -> eliminarContacto());
+        JButton crearGrupo = createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo(this));
+
+        botonesPanel.add(agregarContacto);
+        botonesPanel.add(eliminarContacto);
+        botonesPanel.add(crearGrupo);
+
+        panelContenido.add(botonesPanel, BorderLayout.SOUTH);
+
+        return panelContenido;
+    }
+
+    private JButton createStyledButton(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setBackground(Theme.COLOR_PRINCIPAL);
+        button.setForeground(Theme.COLOR_TEXTO);
+        button.setFont(Theme.FONT_BOLD_MEDIUM);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.addActionListener(action);
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_HOVER);
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_PRINCIPAL);
+            }
+        });
+        return button;
+    }
+
+    private void agregarContacto() {
+        new VentanaNuevoContacto(this);
+    }
+
+    private void eliminarContacto() {
+        String seleccionado = contactosList.getSelectedValue();
+        if (seleccionado == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un contacto", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        String nombre = seleccionado.startsWith("Individual: ") ? seleccionado.substring(12) : seleccionado.substring(7);
+        Contacto contacto = controlador.obtenerContactoPorNombre(nombre);
+        if (contacto instanceof ContactoIndividual) {
+            controlador.eliminarContacto((ContactoIndividual) contacto);
+            JOptionPane.showMessageDialog(this, "Contacto eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Solo se pueden eliminar contactos individuales", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void moverGrupoAContacto() {
-        // This might not make sense in all contexts, but included for symmetry
-        // Perhaps remove a contact from a group?
-        int selectedGroupIndex = groupList.getSelectedIndex();
-        if (selectedGroupIndex != -1) {
-            List<Contacto> contactos = controlador.obtenerContactos();
-            List<Grupo> grupos = new ArrayList<>();
-            for (Contacto c : contactos) {
-                if (c instanceof Grupo) grupos.add((Grupo) c);
-            }
-            Grupo grupo = grupos.get(selectedGroupIndex);
-            // Logic to remove a member or handle this differently could go here
-            updateListaContactos(); // Refresh UI
+    private void actualizarListaContactos() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        for (Contacto contacto : controlador.obtenerContactos()) {
+            String prefixedName = (contacto instanceof ContactoIndividual) 
+                ? "Individual: " + contacto.getNombre() 
+                : "Grupo: " + contacto.getNombre();
+            model.addElement(prefixedName);
         }
+        contactosList.setModel(model);
     }
 
     @Override
     public void updateListaContactos() {
-        SwingUtilities.invokeLater(() -> {
-            System.out.println("Actualizando listas en VentanaContactos");
-            List<Contacto> contactos = controlador.obtenerContactos();
-            System.out.println("Contactos obtenidos: " + contactos);
-
-            contactList.setListData(convertirContactosIndividualesAArray(contactos));
-            groupList.setListData(convertirGruposAArray(contactos));
-            contactList.revalidate();
-            contactList.repaint();
-            groupList.revalidate();
-            groupList.repaint();
-        });
+        SwingUtilities.invokeLater(this::actualizarListaContactos);
     }
 }

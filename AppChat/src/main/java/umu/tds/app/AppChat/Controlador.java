@@ -5,21 +5,21 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
-/**
- * Clase Controlador que implementa el patrón Singleton y Subject para gestionar usuarios,
- * contactos y mensajes en la aplicación AppChat.
- */
 public class Controlador {
     private static final Controlador instancia;
     private static final Logger LOGGER;
@@ -36,7 +36,6 @@ public class Controlador {
 
     private Map<String, Usuario> usuariosSimulados;
     private List<Contacto> contactos;
-    private Map<String, List<String>> mensajes;
     private Usuario usuarioActual;
     private Contacto contactoActual;
     private List<ObserverChats> observersChats;
@@ -49,29 +48,40 @@ public class Controlador {
     private void initialize() {
         usuariosSimulados = new HashMap<>();
         contactos = new ArrayList<>();
-        mensajes = new HashMap<>();
         observersChats = new ArrayList<>();
         observersContactos = new ArrayList<>();
 
         String defaultImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Florentino_perez.jpg/220px-Florentino_perez.jpg";
         ImageIcon profileIcon = loadImageFromUrl(defaultImageUrl);
 
-        usuarioActual = new Usuario(profileIcon, "Florentino Pérez", LocalDate.of(1990, 1, 1), 
-                1234567890, "admin", "admin@gmail.com", false, "Soy su florentineza", null, null);
-        usuariosSimulados.put("1234567890", usuarioActual);
+        // Crear usuarios
+        Usuario florentino = new Usuario("1234567890", "Florentino Pérez", "admin", "admin@gmail.com", "Soy su florentineza", profileIcon, false);
+        Usuario oscar = new Usuario("123456789", "Oscar", "12345", "oscar@gmail.com", "Hola", null, true);
+        Usuario javi = new Usuario("234567890", "Javi", "password", "javi@gmail.com", "Hey!", null, false);
+        Usuario lucia = new Usuario("345678901", "Lucia", "12345", "lucia@gmail.com", "Saludos", null, true);
 
-        contactos.add(new ContactoIndividual("Oscar", 123456789, 
-                new Usuario(new ImageIcon(), "Oscar", LocalDate.of(1990, 1, 1), 123456789, "12345", 
-                        "oscar@gmail.com", true, "Hola", null, null)));
-        contactos.add(new ContactoIndividual("Javi", 234567890, 
-                new Usuario(new ImageIcon(), "Javi", LocalDate.of(1995, 1, 1), 234567890, "password", 
-                        "javi@gmail.com", false, "Hey!", null, null)));
-        contactos.add(new ContactoIndividual("Lucia", 345678901, 
-                new Usuario(new ImageIcon(), "Lucia", LocalDate.of(2000, 1, 1), 345678901, "12345", 
-                        "lucia@gmail.com", true, "Saludos", null, null)));
+        usuariosSimulados.put(florentino.getTelefono(), florentino);
+        usuariosSimulados.put(oscar.getTelefono(), oscar);
+        usuariosSimulados.put(javi.getTelefono(), javi);
+        usuariosSimulados.put(lucia.getTelefono(), lucia);
 
-        mensajes.put("Florentino Pérez-Oscar", new ArrayList<>(List.of("Tú: Hola Oscar")));
-        mensajes.put("Florentino Pérez-Javi", new ArrayList<>(List.of("Tú: Hola Javi")));
+        // Crear contactos
+        ContactoIndividual contactoOscar = new ContactoIndividual("Oscar", 1, 123456789, oscar);
+        ContactoIndividual contactoJavi = new ContactoIndividual("Javi", 2, 234567890, javi);
+        ContactoIndividual contactoLucia = new ContactoIndividual("Lucia", 3, 345678901, lucia);
+        List<ContactoIndividual> miembrosGrupo = new ArrayList<>(List.of(contactoOscar, contactoJavi, contactoLucia));
+        Grupo grupoAmigos = new Grupo("Amigos", 4, miembrosGrupo, florentino);
+
+        contactos.add(contactoOscar);
+        contactos.add(contactoJavi);
+        contactos.add(contactoLucia);
+        contactos.add(grupoAmigos);
+
+        // Mensajes de prueba
+        Mensaje mensaje1 = new Mensaje("Hola Oscar", LocalDateTime.now().minusMinutes(5), florentino, contactoOscar);
+        Mensaje mensaje2 = new Mensaje("¡Hola Florentino!", LocalDateTime.now().minusMinutes(4), oscar, contactoOscar);
+        contactoOscar.sendMensaje(mensaje1);
+        contactoOscar.sendMensaje(mensaje2);
     }
 
     private ImageIcon loadImageFromUrl(String urlString) {
@@ -96,7 +106,9 @@ public class Controlador {
     }
 
     public void addObserverChats(ObserverChats observer) {
-        observersChats.add(observer);
+        if (!observersChats.contains(observer)) {
+            observersChats.add(observer);
+        }
     }
 
     public void removeObserverChats(ObserverChats observer) {
@@ -105,19 +117,17 @@ public class Controlador {
 
     private void notifyObserversChatsRecientes() {
         String[] chatsRecientes = getChatsRecientes();
-        for (ObserverChats observer : observersChats) {
-            observer.updateChatsRecientes(chatsRecientes);
-        }
+        observersChats.forEach(observer -> observer.updateChatsRecientes(chatsRecientes));
     }
 
     private void notifyObserversContactoActual(Contacto contacto) {
-        for (ObserverChats observer : observersChats) {
-            observer.updateContactoActual(contacto);
-        }
+        observersChats.forEach(observer -> observer.updateContactoActual(contacto));
     }
 
     public void addObserverContactos(ObserverContactos observer) {
-        observersContactos.add(observer);
+        if (!observersContactos.contains(observer)) {
+            observersContactos.add(observer);
+        }
     }
 
     public void removeObserverContactos(ObserverContactos observer) {
@@ -125,9 +135,7 @@ public class Controlador {
     }
 
     private void notifyObserversListaContactos() {
-        for (ObserverContactos observer : observersContactos) {
-            observer.updateListaContactos();
-        }
+        observersContactos.forEach(ObserverContactos::updateListaContactos);
     }
 
     public boolean iniciarSesion(String telefono, String password) {
@@ -140,6 +148,7 @@ public class Controlador {
             usuarioActual = usuario;
             LOGGER.info("Inicio de sesión exitoso para teléfono: " + telefono);
             notifyObserversChatsRecientes();
+            notifyObserversListaContactos();
             return true;
         }
         LOGGER.warning("Credenciales incorrectas para teléfono: " + telefono);
@@ -147,12 +156,10 @@ public class Controlador {
     }
 
     public Contacto obtenerContactoPorNombre(String nombre) {
-        for (Contacto contacto : contactos) {
-            if (contacto.getNombre().equalsIgnoreCase(nombre)) {
-                return contacto;
-            }
-        }
-        return null;
+        return contactos.stream()
+            .filter(c -> c.getNombre().equalsIgnoreCase(nombre))
+            .findFirst()
+            .orElse(null);
     }
 
     public void cerrarSesion() {
@@ -165,6 +172,7 @@ public class Controlador {
         contactoActual = null;
         LOGGER.info("Sesión cerrada para usuario: " + nombreUsuario);
         notifyObserversChatsRecientes();
+        notifyObserversContactoActual(null);
     }
 
     public Usuario getUsuarioActual() {
@@ -189,34 +197,84 @@ public class Controlador {
             LOGGER.warning("Intento de envío de mensaje inválido.");
             return;
         }
-        String clave = generarClaveConversacion(contacto);
-        mensajes.computeIfAbsent(clave, k -> new ArrayList<>()).add("Tú: " + mensaje);
+        Mensaje msg = new Mensaje(mensaje, LocalDateTime.now(), usuarioActual, contacto);
+        contacto.sendMensaje(msg);
+        if (contacto instanceof ContactoIndividual) {
+            Usuario receptor = ((ContactoIndividual) contacto).getUsuario();
+            if (receptor != null) {
+                Contacto contactoUsuarioActual = contactos.stream()
+                    .filter(c -> c instanceof ContactoIndividual && ((ContactoIndividual) c).getUsuario() == usuarioActual)
+                    .findFirst()
+                    .orElse(null);
+                if (contactoUsuarioActual != null) {
+                    Mensaje respuesta = new Mensaje("Respuesta automática", LocalDateTime.now().plusSeconds(1), receptor, contactoUsuarioActual);
+                    contactoUsuarioActual.sendMensaje(respuesta);
+                }
+            }
+        }
         LOGGER.info("Mensaje enviado a " + contacto.getNombre() + ": " + mensaje);
         notifyObserversChatsRecientes();
     }
 
     public List<String> obtenerMensajes(Contacto contacto) {
-        if (contacto == null) {
+        if (contacto == null || usuarioActual == null) {
             return Collections.emptyList();
         }
-        String clave = generarClaveConversacion(contacto);
-        return Collections.unmodifiableList(mensajes.getOrDefault(clave, new ArrayList<>()));
-    }
-
-    private String generarClaveConversacion(Contacto contacto) {
-        return usuarioActual.getName() + "-" + contacto.getNombre();
+        List<Mensaje> mensajes = new ArrayList<>();
+        mensajes.addAll(contacto.getMensajesEnviados());
+        mensajes.addAll(contacto.getMensajesRecibidos(Optional.of(usuarioActual)));
+        mensajes.sort(Comparator.comparing(Mensaje::getHora));
+        return mensajes.stream()
+            .map(msg -> (msg.getEmisor() == usuarioActual ? "Tú: " : contacto.getNombre() + ": ") + msg.getTexto())
+            .collect(Collectors.toList());
     }
 
     public String[] getChatsRecientes() {
         List<String> chats = new ArrayList<>();
         for (Contacto contacto : contactos) {
-            String clave = generarClaveConversacion(contacto);
-            if (mensajes.containsKey(clave) && !mensajes.get(clave).isEmpty()) {
+            List<Mensaje> mensajes = new ArrayList<>();
+            mensajes.addAll(contacto.getMensajesEnviados());
+            mensajes.addAll(contacto.getMensajesRecibidos(Optional.of(usuarioActual)));
+            if (!mensajes.isEmpty()) {
                 chats.add("Chat con " + contacto.getNombre());
             }
         }
-        Collections.reverse(chats);
+        Collections.sort(chats, (a, b) -> {
+            String nombreA = a.replace("Chat con ", "");
+            String nombreB = b.replace("Chat con ", "");
+            Contacto contactoA = obtenerContactoPorNombre(nombreA);
+            Contacto contactoB = obtenerContactoPorNombre(nombreB);
+            LocalDateTime ultimaA = getUltimoMensajeTiempo(contactoA);
+            LocalDateTime ultimaB = getUltimoMensajeTiempo(contactoB);
+            return ultimaB.compareTo(ultimaA);
+        });
         return chats.isEmpty() ? new String[]{"No hay chats recientes"} : chats.toArray(new String[0]);
+    }
+
+    private LocalDateTime getUltimoMensajeTiempo(Contacto contacto) {
+        if (contacto == null) return LocalDateTime.MIN;
+        List<Mensaje> mensajes = new ArrayList<>();
+        mensajes.addAll(contacto.getMensajesEnviados());
+        mensajes.addAll(contacto.getMensajesRecibidos(Optional.of(usuarioActual)));
+        return mensajes.stream()
+            .map(Mensaje::getHora)
+            .max(LocalDateTime::compareTo)
+            .orElse(LocalDateTime.MIN);
+    }
+
+    public void activarPremium() {
+        if (usuarioActual != null) {
+            usuarioActual.setPremium(true);
+            LOGGER.info("Usuario " + usuarioActual.getName() + " activado como Premium");
+        }
+    }
+
+    public String generarClaveConversacion(Contacto contacto) {
+        if (usuarioActual == null || contacto == null) {
+            LOGGER.warning("No se puede generar clave de conversación: usuario o contacto nulo");
+            return "";
+        }
+        return usuarioActual.getTelefono() + "_" + contacto.getCodigo();
     }
 
     public boolean agregarContacto(ContactoIndividual contacto) {
@@ -224,20 +282,13 @@ public class Controlador {
             LOGGER.warning("Intento de agregar contacto nulo.");
             return false;
         }
-
-        boolean isDuplicate = contactos.stream().anyMatch(c -> {
-            if (c instanceof ContactoIndividual) {
-                return ((ContactoIndividual) c).getMovil() == contacto.getMovil();
-            } else {
-                return c.getNombre().equalsIgnoreCase(contacto.getNombre());
-            }
-        });
-
+        boolean isDuplicate = contactos.stream().anyMatch(c ->
+            c instanceof ContactoIndividual && ((ContactoIndividual) c).getMovil() == contacto.getMovil() ||
+            c.getNombre().equalsIgnoreCase(contacto.getNombre()));
         if (isDuplicate) {
             LOGGER.warning("Contacto duplicado detectado: " + contacto.getNombre());
             return false;
         }
-
         contactos.add(contacto);
         LOGGER.info("Contacto agregado: " + contacto.getNombre());
         notifyObserversChatsRecientes();
@@ -251,75 +302,51 @@ public class Controlador {
             return;
         }
         if (contactos.remove(contacto)) {
-            String clave = generarClaveConversacion(contacto);
-            mensajes.remove(clave);
             LOGGER.info("Contacto eliminado: " + contacto.getNombre());
             notifyObserversChatsRecientes();
+            notifyObserversListaContactos();
         } else {
             LOGGER.warning("Contacto no encontrado para eliminar: " + contacto.getNombre());
         }
     }
 
     public boolean nuevoContacto(ContactoIndividual contacto) {
-        boolean added = agregarContacto(contacto);
-        if (added && usuarioActual != null) {
-            List<Contacto> userContactos = usuarioActual.getContactos();
-            if (userContactos == null) {
-                userContactos = new ArrayList<>();
-            }
-            userContactos.add(contacto);
-            notifyObserversChatsRecientes();
-            notifyObserversListaContactos();
-        }
-        return added;
+        return agregarContacto(contacto);
     }
 
     public void crearGrupo(String nombre, List<ContactoIndividual> miembros) {
-        if (usuarioActual == null) {
-            LOGGER.warning("Intento de crear grupo sin usuario autenticado.");
-            return;
-        }
-        if (nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) {
-            LOGGER.warning("Intento de crear grupo con nombre o miembros inválidos.");
+        if (usuarioActual == null || nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) {
+            LOGGER.warning("Intento de crear grupo inválido.");
             return;
         }
         if (contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) {
             LOGGER.warning("Nombre de grupo ya existe: " + nombre);
             return;
         }
-
-        List<ContactoIndividual> miembrosCopia = new ArrayList<>(miembros);
-        Grupo nuevoGrupo = new Grupo(nombre, miembrosCopia, usuarioActual);
+        int codigo = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
+        Grupo nuevoGrupo = new Grupo(nombre, codigo, miembros, usuarioActual);
         contactos.add(nuevoGrupo);
-        
-        List<Contacto> userContactos = usuarioActual.getContactos();
-        if (userContactos == null) {
-            userContactos = new ArrayList<>();
-        }
-        userContactos.add(nuevoGrupo);
-
         LOGGER.info("Grupo creado: " + nombre + " con " + miembros.size() + " miembros");
         notifyObserversChatsRecientes();
         notifyObserversListaContactos();
     }
 
     public boolean registrarUsuario(String nombreReal, String nombreUsuario, String password, String confirmarPassword,
-                                    String email, String telefono, LocalDate fechaNacimiento, String rutaFoto, String saludo) {
+                                    String email, String telefono, String rutaFoto, String saludo) {
         String error = validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono);
         if (error != null) {
             JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         ImageIcon profileIcon = loadImageFromUrl(rutaFoto);
-        Usuario nuevoUsuario = new Usuario(profileIcon, nombreReal, fechaNacimiento, Integer.parseInt(telefono), 
-                password, email, false, saludo.isEmpty() ? null : saludo, null, null);
+        Usuario nuevoUsuario = new Usuario(telefono, nombreReal, password, email, saludo, profileIcon, false);
         usuariosSimulados.put(telefono, nuevoUsuario);
         LOGGER.info("Usuario registrado: " + nombreUsuario);
         notifyObserversChatsRecientes();
         return true;
     }
 
-    private String validateRegistration(String nombreReal, String nombreUsuario, String password, 
+    private String validateRegistration(String nombreReal, String nombreUsuario, String password,
                                         String confirmarPassword, String email, String telefono) {
         if (nombreReal.isEmpty() || nombreUsuario.isEmpty() || password.isEmpty() || email.isEmpty() || telefono.isEmpty()) {
             return "Por favor, complete todos los campos obligatorios";
@@ -341,28 +368,22 @@ public class Controlador {
             LOGGER.warning("Intento de actualizar usuario sin estar autenticado.");
             return false;
         }
-        if (!nuevoNombre.equals(usuarioActual.getName()) && 
-            usuariosSimulados.values().stream().anyMatch(u -> u.getName().equals(nuevoNombre))) {
-            LOGGER.warning("Nombre de usuario ya existe: " + nuevoNombre);
-            return false;
-        }
         if (nuevaPassword == null || nuevaPassword.trim().isEmpty()) {
             LOGGER.warning("La contraseña no puede estar vacía para usuario: " + nuevoNombre);
             return false;
         }
         ImageIcon profileIcon = loadImageFromUrl(rutaFoto);
-        String nombreAnterior = usuarioActual.getName();
         usuarioActual.setName(nuevoNombre);
         usuarioActual.setPassword(nuevaPassword);
         usuarioActual.setSaludo(nuevoSaludo);
-        usuarioActual.setProfilePhoto(profileIcon);
-        if (!nuevoNombre.equals(nombreAnterior)) {
-            usuariosSimulados.remove(nombreAnterior);
-            usuariosSimulados.put(String.valueOf(usuarioActual.getNumTelefono()), usuarioActual);
-        }
+        usuarioActual.setFoto(profileIcon);
         LOGGER.info("Usuario actualizado: " + nuevoNombre);
         notifyObserversChatsRecientes();
         return true;
+    }
+
+    public boolean existeUsuario(String telefono) {
+        return usuariosSimulados.containsKey(telefono);
     }
 
     public String getNombreUserActual() {
@@ -370,11 +391,11 @@ public class Controlador {
     }
 
     public ImageIcon getIconoUserActual() {
-        return usuarioActual != null ? usuarioActual.getProfilePhotos() : new ImageIcon();
+        return usuarioActual != null ? usuarioActual.getFoto() : new ImageIcon();
     }
 
     public int getNumTelefonoUserActual() {
-        return usuarioActual != null ? usuarioActual.getNumTelefono() : -1;
+        return usuarioActual != null ? Integer.parseInt(usuarioActual.getTelefono()) : -1;
     }
 
     public String getEmailUserActual() {
@@ -383,5 +404,9 @@ public class Controlador {
 
     public boolean isPremiumUserActual() {
         return usuarioActual != null && usuarioActual.isPremium();
+    }
+
+    public boolean existeContacto(String nombre) {
+        return contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre));
     }
 }

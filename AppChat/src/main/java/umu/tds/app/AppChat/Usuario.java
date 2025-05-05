@@ -1,62 +1,101 @@
 package umu.tds.app.AppChat;
 
-import javax.swing.ImageIcon;
-import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+
+import javax.swing.ImageIcon;
 
 public class Usuario {
-    private ImageIcon profilePhoto;
-    private String name;
-    private LocalDate fechaNacimiento;
-    private int numTelefono;
+    private String telefono;
+    private String nombre;
     private String password;
     private String email;
+    private String saludo;
+    private ImageIcon foto;
     private boolean premium;
-    private Optional<String> saludo;
-    private List<Grupo> gruposAdmin;
     private List<Contacto> contactos;
 
-    public Usuario(ImageIcon icono, String name, LocalDate fechaNacimiento, int numTelefono,
-                   String password, String email, boolean premium, String saludo, 
-                   List<Grupo> gruposAdmin, List<Contacto> contactos) {
-        this.profilePhoto = icono;
-        this.name = name;
-        this.fechaNacimiento = fechaNacimiento;
-        this.numTelefono = numTelefono;
+    public Usuario(String telefono, String nombre, String password, String email, String saludo, ImageIcon foto, boolean premium) {
+        this.telefono = telefono;
+        this.nombre = nombre;
         this.password = password;
         this.email = email;
+        this.saludo = saludo;
+        this.foto = foto;
         this.premium = premium;
-        this.saludo = Optional.ofNullable(saludo);
-        this.gruposAdmin = gruposAdmin != null ? gruposAdmin : new ArrayList<>();
-        this.contactos = contactos != null ? contactos : new ArrayList<>();
+        this.contactos = new ArrayList<>();
     }
 
-    // Getters
-    public ImageIcon getProfilePhotos() { return profilePhoto; }
-    public String getName() { return name; }
-    public String getPassword() { return password; }
-    public String getEmail() { return email; }
-    public int getNumTelefono() { return numTelefono; }
-    public List<Contacto> getContactos() { return contactos; }
-    public boolean isPremium() { return premium; }
-    public Optional<String> getSaludo() { return saludo; }
-
-    // Setters for editable fields
-    public void setProfilePhoto(ImageIcon profilePhoto) {
-        this.profilePhoto = profilePhoto;
+    public String getTelefono() {
+        return telefono;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getName() {
+        return nombre;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getSaludo() {
+        return saludo != null ? saludo : "";
+    }
+
+    public ImageIcon getFoto() {
+        return foto != null ? foto : new ImageIcon();
+    }
+
+    public boolean isPremium() {
+        return premium;
+    }
+
+    public List<Contacto> getContactos() {
+        return contactos != null ? Collections.unmodifiableList(contactos) : Collections.emptyList();
+    }
+
+    public int getNumTelefono() {
+        try {
+            return Integer.parseInt(telefono);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    public ImageIcon getProfilePhotos() {
+        return getFoto();
+    }
+
+    public void setName(String nombre) {
+        this.nombre = nombre;
     }
 
     public void setPassword(String password) {
         this.password = password;
     }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public void setSaludo(String saludo) {
-        this.saludo = Optional.ofNullable(saludo);
+        this.saludo = saludo;
+    }
+
+    public void setFoto(ImageIcon foto) {
+        this.foto = foto;
+    }
+
+    public void setPremium(boolean premium) {
+        this.premium = premium;
+    }
+
+    public void setContactos(List<Contacto> contactos) {
+        this.contactos = new ArrayList<>(contactos);
     }
 }

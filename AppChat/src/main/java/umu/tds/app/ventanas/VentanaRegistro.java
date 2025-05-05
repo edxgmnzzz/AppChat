@@ -295,7 +295,7 @@ public class VentanaRegistro extends JFrame {
             }
         }
 
-        if (controlador.registrarUsuario(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono, localFechaNacimiento, rutaFoto, saludo)) {
+        if (controlador.registrarUsuario(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono, rutaFoto, saludo)) {
             JOptionPane.showMessageDialog(this, "Registro exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
             this.dispose();
             VentanaLogin ventanaLogin = new VentanaLogin();
