@@ -2,7 +2,6 @@ package umu.tds.app.AppChat;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -15,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 
 /**
  * Clase Controlador que implementa el patrón Singleton y Subject para gestionar usuarios,
@@ -23,7 +23,7 @@ import javax.swing.ImageIcon;
 public class Controlador {
     private static final Controlador instancia;
     private static final Logger LOGGER;
-    private static final int PROFILE_IMAGE_SIZE = 100; // Fixed size for profile images (100x100 pixels)
+    private static final int PROFILE_IMAGE_SIZE = 100;
 
     static {
         LOGGER = Logger.getLogger(Controlador.class.getName());
@@ -58,7 +58,7 @@ public class Controlador {
 
         usuarioActual = new Usuario(profileIcon, "Florentino Pérez", LocalDate.of(1990, 1, 1), 
                 1234567890, "admin", "admin@gmail.com", false, "Soy su florentineza", null, null);
-        usuariosSimulados.put("florentino", usuarioActual);
+        usuariosSimulados.put("1234567890", usuarioActual);
 
         contactos.add(new ContactoIndividual("Oscar", 123456789, 
                 new Usuario(new ImageIcon(), "Oscar", LocalDate.of(1990, 1, 1), 123456789, "12345", 
@@ -84,33 +84,9 @@ public class Controlador {
                 Image scaledImage = icon.getImage().getScaledInstance(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE, Image.SCALE_SMOOTH);
                 LOGGER.info("Imagen cargada y redimensionada desde URL: " + urlString);
                 return new ImageIcon(scaledImage);
-            } else {
-                LOGGER.warning("No se pudo cargar la imagen desde URL: " + urlString);
             }
         } catch (Exception e) {
             LOGGER.severe("Error al cargar imagen desde URL " + urlString + ": " + e.getMessage());
-        }
-        return new ImageIcon();
-    }
-
-    private ImageIcon loadImageFromFile(String filePath) {
-        try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                LOGGER.warning("Archivo no encontrado: " + filePath);
-                return new ImageIcon();
-            }
-            BufferedImage image = ImageIO.read(file);
-            if (image != null) {
-                ImageIcon icon = new ImageIcon(image);
-                Image scaledImage = icon.getImage().getScaledInstance(PROFILE_IMAGE_SIZE, PROFILE_IMAGE_SIZE, Image.SCALE_SMOOTH);
-                LOGGER.info("Imagen cargada y redimensionada desde archivo: " + filePath);
-                return new ImageIcon(scaledImage);
-            } else {
-                LOGGER.warning("No se pudo cargar la imagen desde archivo: " + filePath);
-            }
-        } catch (IOException e) {
-            LOGGER.severe("Error al cargar imagen desde archivo " + filePath + ": " + e.getMessage());
         }
         return new ImageIcon();
     }
@@ -154,19 +130,19 @@ public class Controlador {
         }
     }
 
-    public boolean iniciarSesion(String nombreUsuario, String password) {
-        if (nombreUsuario == null || password == null) {
+    public boolean iniciarSesion(String telefono, String password) {
+        if (telefono == null || password == null) {
             LOGGER.warning("Intento de inicio de sesión con credenciales nulas.");
             return false;
         }
-        Usuario usuario = usuariosSimulados.get(nombreUsuario);
+        Usuario usuario = usuariosSimulados.get(telefono);
         if (usuario != null && usuario.getPassword().equals(password)) {
             usuarioActual = usuario;
-            LOGGER.info("Inicio de sesión exitoso para usuario: " + nombreUsuario);
+            LOGGER.info("Inicio de sesión exitoso para teléfono: " + telefono);
             notifyObserversChatsRecientes();
             return true;
         }
-        LOGGER.warning("Credenciales incorrectas para usuario: " + nombreUsuario);
+        LOGGER.warning("Credenciales incorrectas para teléfono: " + telefono);
         return false;
     }
 
@@ -328,51 +304,36 @@ public class Controlador {
     }
 
     public boolean registrarUsuario(String nombreReal, String nombreUsuario, String password, String confirmarPassword,
-                                    String email, int telefono, LocalDate fechaNacimiento, String rutaFoto) {
-        if (!validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono)) {
+                                    String email, String telefono, LocalDate fechaNacimiento, String rutaFoto, String saludo) {
+        String error = validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono);
+        if (error != null) {
+            JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        ImageIcon profileIcon;
-        if (rutaFoto != null && !rutaFoto.isEmpty()) {
-            if (rutaFoto.startsWith("http://") || rutaFoto.startsWith("https://")) {
-                profileIcon = loadImageFromUrl(rutaFoto);
-            } else {
-                profileIcon = loadImageFromFile(rutaFoto);
-            }
-        } else {
-            profileIcon = new ImageIcon();
-        }
-        Usuario nuevoUsuario = new Usuario(profileIcon, nombreReal, fechaNacimiento, telefono, password, 
-                email, false, "¡Hola, soy nuevo!", null, null);
-        usuariosSimulados.put(nombreUsuario, nuevoUsuario);
+        ImageIcon profileIcon = loadImageFromUrl(rutaFoto);
+        Usuario nuevoUsuario = new Usuario(profileIcon, nombreReal, fechaNacimiento, Integer.parseInt(telefono), 
+                password, email, false, saludo.isEmpty() ? null : saludo, null, null);
+        usuariosSimulados.put(telefono, nuevoUsuario);
         LOGGER.info("Usuario registrado: " + nombreUsuario);
         notifyObserversChatsRecientes();
         return true;
     }
 
-    private boolean validateRegistration(String nombreReal, String nombreUsuario, String password, 
-                                         String confirmarPassword, String email, int telefono) {
-        if (nombreReal == null || nombreUsuario == null || password == null || confirmarPassword == null || email == null) {
-            LOGGER.warning("Intento de registro con campos nulos.");
-            return false;
+    private String validateRegistration(String nombreReal, String nombreUsuario, String password, 
+                                        String confirmarPassword, String email, String telefono) {
+        if (nombreReal.isEmpty() || nombreUsuario.isEmpty() || password.isEmpty() || email.isEmpty() || telefono.isEmpty()) {
+            return "Por favor, complete todos los campos obligatorios";
         }
         if (!password.equals(confirmarPassword)) {
-            LOGGER.warning("Las contraseñas no coinciden para usuario: " + nombreUsuario);
-            return false;
+            return "Las contraseñas no coinciden";
         }
-        if (usuariosSimulados.containsKey(nombreUsuario)) {
-            LOGGER.warning("Nombre de usuario ya existe: " + nombreUsuario);
-            return false;
+        if (usuariosSimulados.containsKey(telefono)) {
+            return "El número de teléfono ya está registrado";
         }
         if (usuariosSimulados.values().stream().anyMatch(u -> u.getEmail().equals(email))) {
-            LOGGER.warning("Correo electrónico ya registrado: " + email);
-            return false;
+            return "El correo electrónico ya está registrado";
         }
-        if (usuariosSimulados.values().stream().anyMatch(u -> u.getNumTelefono() == telefono)) {
-            LOGGER.warning("Número de teléfono ya registrado: " + telefono);
-            return false;
-        }
-        return true;
+        return null;
     }
 
     public boolean actualizarUsuario(String nuevoNombre, String nuevaPassword, String nuevoSaludo, String rutaFoto) {
@@ -380,46 +341,27 @@ public class Controlador {
             LOGGER.warning("Intento de actualizar usuario sin estar autenticado.");
             return false;
         }
-
-        // Validar nombre único (si cambió)
-        if (!nuevoNombre.equals(usuarioActual.getName()) && usuariosSimulados.containsKey(nuevoNombre)) {
+        if (!nuevoNombre.equals(usuarioActual.getName()) && 
+            usuariosSimulados.values().stream().anyMatch(u -> u.getName().equals(nuevoNombre))) {
             LOGGER.warning("Nombre de usuario ya existe: " + nuevoNombre);
             return false;
         }
-
-        // Validar contraseña no vacía
         if (nuevaPassword == null || nuevaPassword.trim().isEmpty()) {
             LOGGER.warning("La contraseña no puede estar vacía para usuario: " + nuevoNombre);
             return false;
         }
-
-        // Actualizar foto de perfil
-        ImageIcon profileIcon;
-        if (rutaFoto != null && !rutaFoto.isEmpty()) {
-            if (rutaFoto.startsWith("http://") || rutaFoto.startsWith("https://")) {
-                profileIcon = loadImageFromUrl(rutaFoto);
-            } else {
-                profileIcon = loadImageFromFile(rutaFoto);
-            }
-        } else {
-            profileIcon = usuarioActual.getProfilePhotos(); // Mantener la foto actual si no se proporciona una nueva
-        }
-
-        // Actualizar datos del usuario
+        ImageIcon profileIcon = loadImageFromUrl(rutaFoto);
         String nombreAnterior = usuarioActual.getName();
         usuarioActual.setName(nuevoNombre);
         usuarioActual.setPassword(nuevaPassword);
         usuarioActual.setSaludo(nuevoSaludo);
         usuarioActual.setProfilePhoto(profileIcon);
-
-        // Actualizar la clave en usuariosSimulados
         if (!nuevoNombre.equals(nombreAnterior)) {
             usuariosSimulados.remove(nombreAnterior);
-            usuariosSimulados.put(nuevoNombre, usuarioActual);
+            usuariosSimulados.put(String.valueOf(usuarioActual.getNumTelefono()), usuarioActual);
         }
-
         LOGGER.info("Usuario actualizado: " + nuevoNombre);
-        notifyObserversChatsRecientes(); // Notificar cambios (puede afectar UI)
+        notifyObserversChatsRecientes();
         return true;
     }
 

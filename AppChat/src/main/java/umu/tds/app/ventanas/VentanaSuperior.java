@@ -2,8 +2,7 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
-
+import java.awt.event.*;
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
@@ -30,14 +29,14 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         setBackground(Theme.COLOR_HEADER);
         setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_MEDIUM, Theme.PADDING_SMALL, Theme.PADDING_MEDIUM));
 
-        // Panel de opciones (izquierda)
-        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         optionsPanel.setOpaque(false);
 
         contactos = new JComboBox<>();
         contactos.setRenderer(new CustomComboBoxRenderer());
         contactos.setBackground(Theme.COLOR_SECUNDARIO);
         contactos.setForeground(Theme.COLOR_PRINCIPAL);
+        contactos.setPreferredSize(new Dimension(200, 30));
         actualizarContactosDropdown();
 
         contactos.addActionListener(e -> {
@@ -51,10 +50,10 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             }
         });
 
-        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(this));
-        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(this));
-        premiumButton = createStyledButton("Premium", e -> JOptionPane.showConfirmDialog(this, "¿Quieres hacerte Premium socio?"));
-        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(this));
+        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(this), "Buscar mensajes o contactos");
+        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(this), "Gestionar contactos");
+        premiumButton = createStyledButton("Premium", e -> mostrarDialogoPremium(), "Hazte Premium");
+        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(this), "Configurar ajustes");
 
         optionsPanel.add(contactos);
         optionsPanel.add(searchButton);
@@ -64,7 +63,6 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
 
         add(optionsPanel, BorderLayout.WEST);
 
-        // Panel de usuario (derecha)
         JPanel userPanel = new JPanel(new BorderLayout());
         userPanel.setOpaque(false);
 
@@ -86,7 +84,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         add(userPanel, BorderLayout.EAST);
     }
 
-    private JButton createStyledButton(String text, ActionListener action) {
+    private JButton createStyledButton(String text, ActionListener action, String tooltip) {
         JButton button = new JButton(text);
         button.setBackground(Theme.COLOR_PRINCIPAL);
         button.setForeground(Theme.COLOR_TEXTO);
@@ -96,16 +94,30 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
+        button.setToolTipText(tooltip);
         button.addActionListener(action);
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_HOVER);
             }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            public void mouseExited(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_PRINCIPAL);
             }
         });
         return button;
+    }
+
+    private void mostrarDialogoPremium() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Theme.COLOR_FONDO);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel mensaje = new JLabel("¿Quieres hacerte Premium socio?");
+        mensaje.setFont(Theme.FONT_BOLD_MEDIUM);
+        mensaje.setForeground(Theme.COLOR_TEXTO);
+        panel.add(mensaje, BorderLayout.CENTER);
+
+        JOptionPane.showConfirmDialog(this, panel, "Hazte Premium", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
     }
 
     public void inicializarContactoActual() {
