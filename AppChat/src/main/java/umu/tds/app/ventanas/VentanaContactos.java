@@ -144,9 +144,9 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
     }
 
     private void agregarContacto() {
-        new VentanaNuevoContacto(this);
+        VentanaNuevoContacto ventanaNuevoContacto = new VentanaNuevoContacto(this);
+        ventanaNuevoContacto.setVisible(true);
     }
-
     private void eliminarContacto() {
         String seleccionado = contactosList.getSelectedValue();
         if (seleccionado == null) {
