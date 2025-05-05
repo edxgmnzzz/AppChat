@@ -2,14 +2,15 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
-
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
+import umu.tds.app.AppChat.Theme;
 
-public class VentanaNuevoGrupo extends JFrame {
+public class VentanaNuevoGrupo extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField groupNameField;
     private JList<String> availableContactsList;
@@ -18,48 +19,117 @@ public class VentanaNuevoGrupo extends JFrame {
     private DefaultListModel<String> availableModel;
     private DefaultListModel<String> selectedModel;
 
-    public VentanaNuevoGrupo(JFrame parent) {
+    public VentanaNuevoGrupo(JDialog parent) {
+        super(parent, "Crear Nuevo Grupo", ModalityType.APPLICATION_MODAL);
         controlador = Controlador.getInstancia();
+        configurarVentana();
+        crearComponentes();
+    }
 
-        setTitle("Crear Nuevo Grupo");
+    private void configurarVentana() {
         setSize(600, 400);
-        setLocationRelativeTo(parent);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(getParent());
+        setUndecorated(true);
+        setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 600, 400, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
+    }
 
+    private void crearComponentes() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBackground(Theme.COLOR_FONDO);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
+
+        mainPanel.add(crearBarraTitulo(), BorderLayout.NORTH);
+        mainPanel.add(crearPanelContenido(), BorderLayout.CENTER);
+
+        add(mainPanel);
+    }
+
+    private JPanel crearBarraTitulo() {
+        JPanel barraTitulo = new JPanel(new BorderLayout());
+        barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
+        barraTitulo.setPreferredSize(new Dimension(600, Theme.TITLE_BAR_HEIGHT));
+
+        JLabel labelTitulo = new JLabel("  Crear Nuevo Grupo");
+        labelTitulo.setForeground(Theme.COLOR_SECUNDARIO);
+        labelTitulo.setFont(Theme.FONT_BOLD_MEDIUM);
+        barraTitulo.add(labelTitulo, BorderLayout.WEST);
+
+        JButton cerrarBoton = new JButton("×");
+        cerrarBoton.setPreferredSize(new Dimension(45, Theme.TITLE_BAR_HEIGHT));
+        cerrarBoton.setFocusPainted(false);
+        cerrarBoton.setBorderPainted(false);
+        cerrarBoton.setContentAreaFilled(false);
+        cerrarBoton.setForeground(Theme.COLOR_SECUNDARIO);
+        cerrarBoton.setFont(Theme.FONT_BOLD_MEDIUM);
+        cerrarBoton.addActionListener(e -> dispose());
+        cerrarBoton.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                cerrarBoton.setBackground(Theme.COLOR_ACENTO);
+                cerrarBoton.setContentAreaFilled(true);
+            }
+            public void mouseExited(MouseEvent e) {
+                cerrarBoton.setContentAreaFilled(false);
+            }
+        });
+
+        JPanel botonesControl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        botonesControl.setOpaque(false);
+        botonesControl.add(cerrarBoton);
+        barraTitulo.add(botonesControl, BorderLayout.EAST);
+
+        return barraTitulo;
+    }
+
+    private JPanel crearPanelContenido() {
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBackground(Theme.COLOR_FONDO);
 
         // Group Name Input
         JPanel namePanel = new JPanel(new FlowLayout());
+        namePanel.setBackground(Theme.COLOR_FONDO);
         JLabel nameLabel = new JLabel("Nombre del Grupo:");
+        nameLabel.setFont(Theme.FONT_BOLD_MEDIUM);
+        nameLabel.setForeground(Theme.COLOR_SECUNDARIO);
         groupNameField = new JTextField(20);
+        groupNameField.setFont(Theme.FONT_PLAIN_MEDIUM);
+        groupNameField.setForeground(Theme.COLOR_PRINCIPAL);
+        groupNameField.setBackground(Theme.COLOR_SECUNDARIO);
+        groupNameField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
         namePanel.add(nameLabel);
         namePanel.add(groupNameField);
 
         // Contact Selection Panels
         JPanel selectionPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        selectionPanel.setBackground(Theme.COLOR_FONDO);
 
         // Available Contacts (Left)
         availableModel = new DefaultListModel<>();
         cargarContactosDisponibles();
         availableContactsList = new JList<>(availableModel);
+        availableContactsList.setBackground(Theme.COLOR_SECUNDARIO);
+        availableContactsList.setForeground(Theme.COLOR_PRINCIPAL);
         JScrollPane availableScrollPane = new JScrollPane(availableContactsList);
         JPanel availablePanel = new JPanel(new BorderLayout());
+        availablePanel.setBackground(Theme.COLOR_FONDO);
         availablePanel.setBorder(BorderFactory.createTitledBorder("Contactos Disponibles"));
         availablePanel.add(availableScrollPane, BorderLayout.CENTER);
 
         // Move Buttons (Center)
         JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 5, 5));
-        JButton addButton = new JButton(">>");
-        JButton removeButton = new JButton("<<");
+        buttonPanel.setBackground(Theme.COLOR_FONDO);
+        JButton addButton = createStyledButton(">>", e -> agregarMiembro());
+        JButton removeButton = createStyledButton("<<", e -> quitarMiembro());
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
 
         // Selected Members (Right)
         selectedModel = new DefaultListModel<>();
         selectedMembersList = new JList<>(selectedModel);
+        selectedMembersList.setBackground(Theme.COLOR_SECUNDARIO);
+        selectedMembersList.setForeground(Theme.COLOR_PRINCIPAL);
         JScrollPane selectedScrollPane = new JScrollPane(selectedMembersList);
         JPanel selectedPanel = new JPanel(new BorderLayout());
+        selectedPanel.setBackground(Theme.COLOR_FONDO);
         selectedPanel.setBorder(BorderFactory.createTitledBorder("Miembros Seleccionados"));
         selectedPanel.add(selectedScrollPane, BorderLayout.CENTER);
 
@@ -69,8 +139,9 @@ public class VentanaNuevoGrupo extends JFrame {
 
         // Bottom Buttons
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton createButton = new JButton("Crear Grupo");
-        JButton cancelButton = new JButton("Cancelar");
+        bottomPanel.setBackground(Theme.COLOR_FONDO);
+        JButton createButton = createStyledButton("Crear Grupo", e -> crearGrupo());
+        JButton cancelButton = createStyledButton("Cancelar", e -> dispose());
         bottomPanel.add(createButton);
         bottomPanel.add(cancelButton);
 
@@ -78,14 +149,29 @@ public class VentanaNuevoGrupo extends JFrame {
         mainPanel.add(selectionPanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
-        // Button Actions
-        addButton.addActionListener(e -> agregarMiembro());
-        removeButton.addActionListener(e -> quitarMiembro());
-        createButton.addActionListener(e -> crearGrupo());
-        cancelButton.addActionListener(e -> dispose());
+        return mainPanel;
+    }
 
-        setContentPane(mainPanel);
-        setVisible(true);
+    private JButton createStyledButton(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setBackground(Theme.COLOR_PRINCIPAL);
+        button.setForeground(Theme.COLOR_TEXTO);
+        button.setFont(Theme.FONT_BOLD_MEDIUM);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.addActionListener(action);
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_HOVER);
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_PRINCIPAL);
+            }
+        });
+        return button;
     }
 
     private void cargarContactosDisponibles() {
@@ -120,7 +206,16 @@ public class VentanaNuevoGrupo extends JFrame {
                 "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+        if (controlador.existeContacto(groupName)) {
+            JOptionPane.showMessageDialog(this, "El nombre del grupo ya existe.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (selectedModel.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Seleccione al menos un miembro.", 
+                "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         List<ContactoIndividual> miembros = new ArrayList<>();
         List<Contacto> contactos = controlador.obtenerContactos();
         for (int i = 0; i < selectedModel.size(); i++) {
@@ -132,11 +227,9 @@ public class VentanaNuevoGrupo extends JFrame {
                 }
             }
         }
-
-        // Create the group via Controlador
-        controlador.crearGrupo(groupName, miembros); // Assumes this method exists
+        controlador.crearGrupo(groupName, miembros);
         JOptionPane.showMessageDialog(this, "Grupo '" + groupName + "' creado con éxito.", 
             "Éxito", JOptionPane.INFORMATION_MESSAGE);
-        dispose(); // Close the window after creation
+        dispose();
     }
 }

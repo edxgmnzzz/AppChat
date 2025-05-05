@@ -2,76 +2,166 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import umu.tds.app.AppChat.Controlador;
+import java.awt.event.*;
 import umu.tds.app.AppChat.ContactoIndividual;
-import umu.tds.app.AppChat.Usuario;
+import umu.tds.app.AppChat.Controlador;
+import umu.tds.app.AppChat.Theme;
 
-public class VentanaNuevoContacto extends JFrame  {
+public class VentanaNuevoContacto extends JDialog {
     private static final long serialVersionUID = 1L;
-    private final Controlador controlador; // Referencia al Controlador
+    private JTextField nombreField;
+    private JTextField telefonoField;
+    private Controlador controlador;
 
-    public VentanaNuevoContacto(JFrame parent) {
-        controlador = Controlador.getInstancia(); // Obtener la instancia del Controlador
-        setTitle("Añadir Contacto");
-        setSize(350, 200);
-        setLocationRelativeTo(parent);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    public VentanaNuevoContacto(JDialog parent) {
+        super(parent, "Añadir Contacto", ModalityType.APPLICATION_MODAL);
+        controlador = Controlador.getInstancia();
+        configurarVentana();
+        crearComponentes();
+    }
 
-        JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
-        JLabel nameLabel = new JLabel("Nombre:");
-        JTextField nameField = new JTextField();
-        JLabel phoneLabel = new JLabel("Teléfono:");
-        JTextField phoneField = new JTextField();
+    private void configurarVentana() {
+        setSize(300, 200);
+        setLocationRelativeTo(getParent());
+        setUndecorated(true);
+        setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 300, 200, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
+    }
 
-        panel.add(nameLabel);
-        panel.add(nameField);
-        panel.add(phoneLabel);
-        panel.add(phoneField);
+    private void crearComponentes() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(Theme.COLOR_FONDO);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
 
-        JButton acceptButton = new JButton("Aceptar");
-        JButton cancelButton = new JButton("Cancelar");
+        mainPanel.add(crearBarraTitulo(), BorderLayout.NORTH);
+        mainPanel.add(crearPanelContenido(), BorderLayout.CENTER);
 
-        acceptButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String nombre = nameField.getText().trim();
-                String telefonoStr = phoneField.getText().trim();
+        add(mainPanel);
+    }
 
-                if (nombre.isEmpty() || telefonoStr.isEmpty()) {
-                    JOptionPane.showMessageDialog(VentanaNuevoContacto.this, 
-                            "El nombre y el teléfono son obligatorios.", "Error", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
+    private JPanel crearBarraTitulo() {
+        JPanel barraTitulo = new JPanel(new BorderLayout());
+        barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
+        barraTitulo.setPreferredSize(new Dimension(300, Theme.TITLE_BAR_HEIGHT));
 
-                try {
-                    int telefono = Integer.parseInt(telefonoStr);
-                    // Crear un usuario básico para el contacto (sin datos adicionales por ahora)
-                    Usuario usuarioContacto = new Usuario(new ImageIcon(), nombre, null, telefono, 
-                            "default", nombre + "@email.com", false, null, null, null);
-                    ContactoIndividual nuevoContacto = new ContactoIndividual(nombre, telefono, usuarioContacto);
+        JLabel labelTitulo = new JLabel("  Añadir Contacto");
+        labelTitulo.setForeground(Theme.COLOR_SECUNDARIO);
+        labelTitulo.setFont(Theme.FONT_BOLD_MEDIUM);
+        barraTitulo.add(labelTitulo, BorderLayout.WEST);
 
-                    if (controlador.nuevoContacto(nuevoContacto)) {
-                        JOptionPane.showMessageDialog(null, "Contacto añadido con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                        dispose();
-                    } else {
-                        JOptionPane.showMessageDialog(VentanaNuevoContacto.this, 
-                                "El contacto ya existe o los datos son inválidos.", "Error", JOptionPane.WARNING_MESSAGE);
-                    }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(VentanaNuevoContacto.this, 
-                            "El teléfono debe ser un número válido.", "Error", JOptionPane.WARNING_MESSAGE);
-                }
+        JButton cerrarBoton = new JButton("×");
+        cerrarBoton.setPreferredSize(new Dimension(45, Theme.TITLE_BAR_HEIGHT));
+        cerrarBoton.setFocusPainted(false);
+        cerrarBoton.setBorderPainted(false);
+        cerrarBoton.setContentAreaFilled(false);
+        cerrarBoton.setForeground(Theme.COLOR_SECUNDARIO);
+        cerrarBoton.setFont(Theme.FONT_BOLD_MEDIUM);
+        cerrarBoton.addActionListener(e -> dispose());
+        cerrarBoton.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                cerrarBoton.setBackground(Theme.COLOR_ACENTO);
+                cerrarBoton.setContentAreaFilled(true);
+            }
+            public void mouseExited(MouseEvent e) {
+                cerrarBoton.setContentAreaFilled(false);
             }
         });
 
-        cancelButton.addActionListener(e -> dispose());
+        JPanel botonesControl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        botonesControl.setOpaque(false);
+        botonesControl.add(cerrarBoton);
+        barraTitulo.add(botonesControl, BorderLayout.EAST);
 
-        setLayout(new BorderLayout());
-        add(panel, BorderLayout.CENTER);
-        add(acceptButton, BorderLayout.SOUTH);
+        return barraTitulo;
+    }
 
-        setVisible(true);
+    private JPanel crearPanelContenido() {
+        JPanel panelContenido = new JPanel(new GridBagLayout());
+        panelContenido.setBackground(Theme.COLOR_FONDO);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        JLabel nombreLabel = new JLabel("Nombre:");
+        nombreLabel.setFont(Theme.FONT_BOLD_MEDIUM);
+        nombreLabel.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 0;
+        panelContenido.add(nombreLabel, gbc);
+
+        nombreField = new JTextField(15);
+        nombreField.setFont(Theme.FONT_PLAIN_MEDIUM);
+        nombreField.setForeground(Theme.COLOR_PRINCIPAL);
+        nombreField.setBackground(Theme.COLOR_SECUNDARIO);
+        nombreField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 0;
+        panelContenido.add(nombreField, gbc);
+
+        JLabel telefonoLabel = new JLabel("Teléfono:");
+        telefonoLabel.setFont(Theme.FONT_BOLD_MEDIUM);
+        telefonoLabel.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 1;
+        panelContenido.add(telefonoLabel, gbc);
+
+        telefonoField = new JTextField(15);
+        telefonoField.setFont(Theme.FONT_PLAIN_MEDIUM);
+        telefonoField.setForeground(Theme.COLOR_PRINCIPAL);
+        telefonoField.setBackground(Theme.COLOR_SECUNDARIO);
+        telefonoField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 1;
+        panelContenido.add(telefonoField, gbc);
+
+        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        botonesPanel.setBackground(Theme.COLOR_FONDO);
+        JButton aceptarBoton = createStyledButton("Aceptar", e -> agregarContacto());
+        JButton cancelarBoton = createStyledButton("Cancelar", e -> dispose());
+        botonesPanel.add(aceptarBoton);
+        botonesPanel.add(cancelarBoton);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        panelContenido.add(botonesPanel, gbc);
+
+        return panelContenido;
+    }
+
+    private JButton createStyledButton(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setBackground(Theme.COLOR_PRINCIPAL);
+        button.setForeground(Theme.COLOR_TEXTO);
+        button.setFont(Theme.FONT_BOLD_MEDIUM);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.addActionListener(action);
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_HOVER);
+            }
+            public void mouseExited(MouseEvent evt) {
+                button.setBackground(Theme.COLOR_PRINCIPAL);
+            }
+        });
+        return button;
+    }
+
+    private void agregarContacto() {
+        String nombre = nombreField.getText().trim();
+        String telefono = telefonoField.getText().trim();
+        if (nombre.isEmpty() || !telefono.matches("\\d{9,15}")) {
+            JOptionPane.showMessageDialog(this, "Nombre o teléfono inválido", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!controlador.existeUsuario(telefono)) {
+            JOptionPane.showMessageDialog(this, "El teléfono no está registrado", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // CAMBIAR
+        ContactoIndividual contacto = new ContactoIndividual(nombre, 3, Integer.parseInt(telefono), null);
+        if (controlador.nuevoContacto(contacto)) {
+            JOptionPane.showMessageDialog(this, "Contacto agregado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "El contacto ya existe", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

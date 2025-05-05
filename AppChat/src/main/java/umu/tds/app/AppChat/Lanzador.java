@@ -16,7 +16,7 @@ public class Lanzador {
             try {
                 // Simular inicio de sesión con usuario predeterminado para desarrollo
                 Controlador controlador = Controlador.getInstancia();
-                boolean loginExitoso = controlador.iniciarSesion("florentino", "admin");
+                boolean loginExitoso = controlador.iniciarSesion("1234567890", "admin");
 
                 if (loginExitoso) {
                     // Iniciar directamente VentanaPrincipal

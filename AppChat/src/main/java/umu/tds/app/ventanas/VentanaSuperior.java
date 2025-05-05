@@ -3,20 +3,19 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
+
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.Grupo;
 import umu.tds.app.AppChat.ObserverChats;
 import umu.tds.app.AppChat.ObserverContactos;
 import umu.tds.app.AppChat.Theme;
 
-import java.util.List;
-
 public class VentanaSuperior extends JPanel implements ObserverChats, ObserverContactos {
     private static final long serialVersionUID = 1L;
     private JComboBox<String> contactos;
-    private JButton searchButton, contactsButton, premiumButton, settingsButton;
+    private JButton searchButton, contactsButton, premiumButton, settingsButton, logoutButton;
     private JLabel userLabel, userImage;
     private Controlador controlador;
     private static final int DISPLAY_IMAGE_SIZE = 50;
@@ -50,16 +49,23 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             }
         });
 
-        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(this), "Buscar mensajes o contactos");
-        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(this), "Gestionar contactos");
+        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(), "Buscar mensajes o contactos");
+
+        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(), "Gestionar contactos");
+
         premiumButton = createStyledButton("Premium", e -> mostrarDialogoPremium(), "Hazte Premium");
-        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(this), "Configurar ajustes");
+
+        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(), "Configurar ajustes");
+
+        logoutButton = createStyledButton("Cerrar Sesión", e -> cerrarSesion(), "Cerrar sesión");
+
 
         optionsPanel.add(contactos);
         optionsPanel.add(searchButton);
         optionsPanel.add(contactsButton);
         optionsPanel.add(premiumButton);
         optionsPanel.add(settingsButton);
+        optionsPanel.add(logoutButton);
 
         add(optionsPanel, BorderLayout.WEST);
 
@@ -82,6 +88,8 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         userPanel.add(userLabel, BorderLayout.SOUTH);
 
         add(userPanel, BorderLayout.EAST);
+
+        inicializarContactoActual();
     }
 
     private JButton createStyledButton(String text, ActionListener action, String tooltip) {
@@ -112,12 +120,27 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         panel.setBackground(Theme.COLOR_FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel mensaje = new JLabel("¿Quieres hacerte Premium socio?");
+        JLabel mensaje = new JLabel(controlador.isPremiumUserActual() ? 
+            "Ya eres Premium!" : "¿Quieres hacerte Premium socio?");
         mensaje.setFont(Theme.FONT_BOLD_MEDIUM);
         mensaje.setForeground(Theme.COLOR_TEXTO);
         panel.add(mensaje, BorderLayout.CENTER);
 
-        JOptionPane.showConfirmDialog(this, panel, "Hazte Premium", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (!controlador.isPremiumUserActual()) {
+            JButton activarButton = createStyledButton("Activar Premium", e -> {
+                controlador.activarPremium();
+                JOptionPane.showMessageDialog(this, "Cuenta Premium activada", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            }, "Botón activar");
+            panel.add(activarButton, BorderLayout.SOUTH);
+        }
+
+        JOptionPane.showConfirmDialog(this, panel, "Hazte Premium", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private void cerrarSesion() {
+        controlador.cerrarSesion();
+        SwingUtilities.getWindowAncestor(this).dispose();
+        new VentanaLogin().setVisible(true);
     }
 
     public void inicializarContactoActual() {
@@ -125,11 +148,15 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         if (chatsRecientes.length > 0 && !chatsRecientes[0].equals("No hay chats recientes")) {
             String primerChat = chatsRecientes[0].substring(9);
             Contacto contactoInicial = controlador.obtenerContactoPorNombre(primerChat);
-            controlador.setContactoActual(contactoInicial);
-            String prefixedName = (contactoInicial instanceof ContactoIndividual) 
-                ? "Individual: " + contactoInicial.getNombre() 
-                : "Grupo: " + contactoInicial.getNombre();
-            contactos.setSelectedItem(prefixedName);
+            if (contactoInicial != null) {
+                controlador.setContactoActual(contactoInicial);
+                String prefixedName = (contactoInicial instanceof ContactoIndividual) 
+                    ? "Individual: " + contactoInicial.getNombre() 
+                    : "Grupo: " + contactoInicial.getNombre();
+                contactos.setSelectedItem(prefixedName);
+            } else {
+                contactos.setSelectedIndex(0);
+            }
         } else {
             contactos.setSelectedIndex(0);
         }
@@ -138,17 +165,12 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
     private void actualizarContactosDropdown() {
         contactos.removeAllItems();
         contactos.addItem("Seleccione un contacto...");
-
         List<Contacto> contactosList = controlador.obtenerContactos();
         for (Contacto contacto : contactosList) {
-            if (contacto instanceof ContactoIndividual) {
-                contactos.addItem("Individual: " + contacto.getNombre());
-            }
-        }
-        for (Contacto contacto : contactosList) {
-            if (contacto instanceof Grupo) {
-                contactos.addItem("Grupo: " + contacto.getNombre());
-            }
+            String prefixedName = (contacto instanceof ContactoIndividual) 
+                ? "Individual: " + contacto.getNombre() 
+                : "Grupo: " + contacto.getNombre();
+            contactos.addItem(prefixedName);
         }
     }
 
@@ -160,6 +182,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             ? new ImageIcon(originalIcon.getImage().getScaledInstance(DISPLAY_IMAGE_SIZE, DISPLAY_IMAGE_SIZE, Image.SCALE_SMOOTH))
             : new ImageIcon();
         userImage.setIcon(scaledIcon);
+        inicializarContactoActual();
     }
 
     @Override
@@ -171,7 +194,9 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             String prefixedName = (contacto instanceof ContactoIndividual) 
                 ? "Individual: " + contacto.getNombre() 
                 : "Grupo: " + contacto.getNombre();
-            contactos.setSelectedItem(prefixedName);
+            if (!prefixedName.equals(contactos.getSelectedItem())) {
+                contactos.setSelectedItem(prefixedName);
+            }
         }
     }
 
