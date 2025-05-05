@@ -409,4 +409,11 @@ public class Controlador {
     public boolean existeContacto(String nombre) {
         return contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre));
     }
+
+    public int generarCodigoContacto() {
+
+        return (int)(System.currentTimeMillis() % Integer.MAX_VALUE);
+    }
+   
+
 }

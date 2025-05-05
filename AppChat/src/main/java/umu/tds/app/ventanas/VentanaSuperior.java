@@ -49,13 +49,22 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             }
         });
 
-        searchButton = createStyledButton("Buscar", e -> new VentanaBusqueda(), "Buscar mensajes o contactos");
+        searchButton = createStyledButton("Buscar", e -> {
+            VentanaBusqueda ventana = new VentanaBusqueda();
+            ventana.setVisible(true);
+        }, "Buscar mensajes o contactos");
 
-        contactsButton = createStyledButton("Contactos", e -> new VentanaContactos(), "Gestionar contactos");
+        contactsButton = createStyledButton("Contactos", e -> {
+            VentanaContactos ventana = new VentanaContactos();
+            ventana.setVisible(true);
+        }, "Gestionar contactos");
 
+        settingsButton = createStyledButton("Ajustes", e -> {
+            VentanaAjustes ventana = new VentanaAjustes();
+            ventana.setVisible(true);
+        }, "Configurar ajustes");
         premiumButton = createStyledButton("Premium", e -> mostrarDialogoPremium(), "Hazte Premium");
 
-        settingsButton = createStyledButton("Ajustes", e -> new VentanaAjustes(), "Configurar ajustes");
 
         logoutButton = createStyledButton("Cerrar Sesión", e -> cerrarSesion(), "Cerrar sesión");
 

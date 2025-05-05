@@ -151,12 +151,9 @@ public class VentanaNuevoContacto extends JDialog {
             JOptionPane.showMessageDialog(this, "Nombre o teléfono inválido", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (!controlador.existeUsuario(telefono)) {
-            JOptionPane.showMessageDialog(this, "El teléfono no está registrado", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+
         // CAMBIAR
-        ContactoIndividual contacto = new ContactoIndividual(nombre, 3, Integer.parseInt(telefono), null);
+        ContactoIndividual contacto = new ContactoIndividual(nombre, controlador.generarCodigoContacto(), Integer.parseInt(telefono), null);
         if (controlador.nuevoContacto(contacto)) {
             JOptionPane.showMessageDialog(this, "Contacto agregado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
