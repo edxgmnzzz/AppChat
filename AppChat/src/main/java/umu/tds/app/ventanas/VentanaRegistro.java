@@ -3,40 +3,28 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.text.JTextComponent;
 import com.toedter.calendar.JDateChooser;
 import umu.tds.app.AppChat.Controlador;
+import umu.tds.app.AppChat.Theme;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-import java.io.File;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.dnd.*;
 
 public class VentanaRegistro extends JFrame {
     private static final long serialVersionUID = 1L;
-    private JTextField campoUsuario;
-    private JPasswordField campoPassword;
-    private JTextField campoEmail;
-    private Controlador controlador;
-    private static final int WINDOW_WIDTH = 400;
-    private static final int WINDOW_HEIGHT = 350;
-    private static final int BORDER_RADIUS = 15;
-    private static final int BUTTON_WIDTH = 200;
-    private static final int BUTTON_HEIGHT = 40;
     
-    // Colores de la aplicación
-    private static final Color COLOR_FONDO = new Color(41, 128, 185);
-    private static final Color COLOR_PRINCIPAL = new Color(52, 152, 219);
-    private static final Color COLOR_SECUNDARIO = new Color(236, 240, 241);
-    private static final Color COLOR_ACENTO = new Color(231, 76, 60);
-    private JTextComponent campoNombreReal;
+    private JTextField campoNombreReal;
+    private JTextField campoNombreUsuario;
+    private JPasswordField campoPassword;
     private JPasswordField campoConfirmarPassword;
-    private JTextComponent campoTelefono;
+    private JTextField campoEmail;
+    private JTextField campoTelefono;
     private JDateChooser campoFechaNacimiento;
     private JTextField campoRutaFoto;
+    private JTextField campoSaludo;
     private Point initialClick;
+    private final Controlador controlador;
 
     public VentanaRegistro() {
         controlador = Controlador.getInstancia();
@@ -45,224 +33,32 @@ public class VentanaRegistro extends JFrame {
     }
 
     private void configurarVentana() {
-        // Configurar ventana para que se abra maximizada a pantalla completa
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setUndecorated(false); // Para mantener los controles de la ventana
-        setLocationRelativeTo(null); // Centrar la ventana en la pantalla
+        setSize(400, 600);
+        setUndecorated(true);
+        setLocationRelativeTo(null);
+        setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 400, 600, 15, 15));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
     private void crearComponentes() {
         JPanel panelPrincipal = new JPanel(new BorderLayout());
-        panelPrincipal.setBackground(COLOR_FONDO);
+        panelPrincipal.setBackground(Theme.COLOR_FONDO);
 
-        // Barra de título con los botones de minimizar, maximizar y cerrar
-        JPanel barraTitulo = crearBarraTitulo();
-        panelPrincipal.add(barraTitulo, BorderLayout.NORTH);
+        panelPrincipal.add(crearBarraTitulo(), BorderLayout.NORTH);
+        panelPrincipal.add(crearPanelContenido(), BorderLayout.CENTER);
 
-        // Panel de contenido principal
-        JPanel panelContenido = new JPanel();
-        panelContenido.setLayout(new BoxLayout(panelContenido, BoxLayout.Y_AXIS));
-        panelContenido.setOpaque(false);
-        panelContenido.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JLabel labelBienvenida = crearLabel("Registro de nuevo usuario", 18, COLOR_SECUNDARIO);
-        labelBienvenida.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panelContenido.add(labelBienvenida);
-        panelContenido.add(Box.createRigidArea(new Dimension(0, 30)));
-
-        JPanel panelCampos = new JPanel(new GridBagLayout());
-        panelCampos.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        // Campos del formulario
-        campoUsuario = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoPassword = crearCampoPasswordPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoEmail = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoNombreReal = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoConfirmarPassword = crearCampoPasswordPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoTelefono = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        campoFechaNacimiento = new JDateChooser(); // Para la fecha de nacimiento
-        campoFechaNacimiento.setBackground(COLOR_FONDO);
-        
-        // Panel para la ruta de foto con botón de selección y soporte para drag & drop
-        JPanel panelFoto = new JPanel(new BorderLayout());
-        panelFoto.setOpaque(false);
-        campoRutaFoto = crearCampoTextoPersonalizado(COLOR_SECUNDARIO, COLOR_FONDO, COLOR_SECUNDARIO);
-        
-        // Configurar drag and drop para el campo de ruta de foto
-        configurarDragAndDrop(campoRutaFoto);
-        
-        JButton botonSeleccionarFoto = new JButton("...");
-        botonSeleccionarFoto.addActionListener(e -> seleccionarFoto());
-        panelFoto.add(campoRutaFoto, BorderLayout.CENTER);
-        panelFoto.add(botonSeleccionarFoto, BorderLayout.EAST);
-
-        // Agregar los campos al formulario
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panelCampos.add(crearLabel("Nombre Real:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoNombreReal, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        panelCampos.add(crearLabel("Usuario:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoUsuario, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        panelCampos.add(crearLabel("Password:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoPassword, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        panelCampos.add(crearLabel("Confirmar Password:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoConfirmarPassword, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        panelCampos.add(crearLabel("Email:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoEmail, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        panelCampos.add(crearLabel("Teléfono:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoTelefono, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 6;
-        panelCampos.add(crearLabel("Fecha Nacimiento:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(campoFechaNacimiento, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 7;
-        panelCampos.add(crearLabel("Ruta Foto:", 14, COLOR_SECUNDARIO), gbc);
-        gbc.gridx = 1;
-        panelCampos.add(panelFoto, gbc);
-
-        panelContenido.add(panelCampos);
-
-        panelContenido.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        // Botón de registro
-        JButton botonRegistrar = crearBotonPersonalizado("Registrar", e -> registrarUsuario(),
-                Color.RED, Color.WHITE, new Color(192, 57, 43));
-        botonRegistrar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panelContenido.add(botonRegistrar);
-
-        panelPrincipal.add(panelContenido, BorderLayout.CENTER);
         add(panelPrincipal);
-    }
-    
-    private void seleccionarFoto() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos de imagen", "jpg", "jpeg", "png", "gif"));
-        
-        int resultado = fileChooser.showOpenDialog(this);
-        if (resultado == JFileChooser.APPROVE_OPTION) {
-            File archivoSeleccionado = fileChooser.getSelectedFile();
-            campoRutaFoto.setText(archivoSeleccionado.getAbsolutePath());
-        }
-    }
-    
-    private void configurarDragAndDrop(JTextField campo) {
-        new DropTarget(campo, new DropTargetAdapter() {
-            @Override
-            public void drop(DropTargetDropEvent dtde) {
-                try {
-                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
-                    @SuppressWarnings("unchecked")
-                    java.util.List<File> files = (java.util.List<File>) dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    
-                    if (!files.isEmpty()) {
-                        File file = files.get(0);
-                        String extension = getFileExtension(file);
-                        if (extension != null && (extension.equals("jpg") || extension.equals("jpeg") || 
-                                                  extension.equals("png") || extension.equals("gif"))) {
-                            campo.setText(file.getAbsolutePath());
-                        } else {
-                            JOptionPane.showMessageDialog(VentanaRegistro.this, 
-                                                          "Solo se permiten archivos de imagen (jpg, jpeg, png, gif)", 
-                                                          "Formato no válido", JOptionPane.WARNING_MESSAGE);
-                        }
-                    }
-                    
-                    dtde.dropComplete(true);
-                } catch (Exception e) {
-                    dtde.dropComplete(false);
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-    
-    private String getFileExtension(File file) {
-        String name = file.getName();
-        int lastIndexOf = name.lastIndexOf(".");
-        if (lastIndexOf == -1) {
-            return null;
-        }
-        return name.substring(lastIndexOf + 1).toLowerCase();
-    }
-
-    private void registrarUsuario() {
-        String nombreReal = campoNombreReal.getText();  
-        String nombreUsuario = campoUsuario.getText();
-        String password = new String(campoPassword.getPassword());
-        String confirmarPassword = new String(campoConfirmarPassword.getPassword());  
-        String email = campoEmail.getText();
-        int telefono;
-        
-        try {
-            telefono = Integer.parseInt(campoTelefono.getText());
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "El teléfono debe ser un número válido", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        Date fechaNacimiento = campoFechaNacimiento.getDate(); 
-        
-        // Convertir de Date a LocalDate
-        LocalDate localFechaNacimiento = null;
-        if (fechaNacimiento != null) {
-            localFechaNacimiento = fechaNacimiento.toInstant()
-                                                  .atZone(ZoneId.systemDefault()) 
-                                                  .toLocalDate();
-        }
-        
-        String rutaFoto = campoRutaFoto.getText();  
-
-        // Validación de contraseñas
-        if (!password.equals(confirmarPassword)) {
-            JOptionPane.showMessageDialog(this, "Las contraseñas no coinciden", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Registro del usuario usando el controlador
-        if (controlador.registrarUsuario(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono, localFechaNacimiento, rutaFoto)) {
-            JOptionPane.showMessageDialog(this, "Registro exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
-            this.dispose(); 
-            VentanaLogin ventanaLogin = new VentanaLogin();
-            ventanaLogin.setVisible(true);
-        } else {
-            JOptionPane.showMessageDialog(this, "Error en el registro", "Error", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
-        barraTitulo.setBackground(COLOR_PRINCIPAL);
-        barraTitulo.setPreferredSize(new Dimension(WINDOW_WIDTH, 30));
-        barraTitulo.add(new JLabel("  Registro", JLabel.LEFT), BorderLayout.WEST);
+        barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
+        barraTitulo.setPreferredSize(new Dimension(400, 30));
+        
+        JLabel labelTitulo = new JLabel("  Registro");
+        labelTitulo.setForeground(Theme.COLOR_SECUNDARIO);
+        labelTitulo.setFont(Theme.FONT_BOLD_MEDIUM);
+        barraTitulo.add(labelTitulo, BorderLayout.WEST);
 
         JPanel botonesControl = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         botonesControl.setOpaque(false);
@@ -281,29 +77,27 @@ public class VentanaRegistro extends JFrame {
             public void mouseDragged(MouseEvent e) {
                 int thisX = getLocation().x;
                 int thisY = getLocation().y;
-
                 int xMoved = (thisX + e.getX()) - (thisX + initialClick.x);
                 int yMoved = (thisY + e.getY()) - (thisY + initialClick.y);
-
                 setLocation(thisX + xMoved, thisY + yMoved);
             }
         });
 
         return barraTitulo;
     }
-    
+
     private JButton crearBotonControl(String texto, ActionListener accion) {
         JButton boton = new JButton(texto);
         boton.setPreferredSize(new Dimension(45, 30));
         boton.setFocusPainted(false);
         boton.setBorderPainted(false);
         boton.setContentAreaFilled(false);
-        boton.setForeground(COLOR_SECUNDARIO);
-        boton.setFont(new Font("Arial", Font.BOLD, 14));
+        boton.setForeground(Theme.COLOR_SECUNDARIO);
+        boton.setFont(Theme.FONT_BOLD_MEDIUM);
         boton.addActionListener(accion);
         boton.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                boton.setBackground(COLOR_ACENTO);
+                boton.setBackground(Theme.COLOR_ACENTO);
                 boton.setContentAreaFilled(true);
             }
             public void mouseExited(MouseEvent e) {
@@ -312,52 +106,200 @@ public class VentanaRegistro extends JFrame {
         });
         return boton;
     }
-    
-    private JTextField crearCampoTextoPersonalizado(Color colorTexto, Color COLOR_FONDO, Color colorBorde) {
-        JTextField campo = new JTextField(15);
-        campo.setFont(new Font("Arial", Font.PLAIN, 14));
-        campo.setForeground(colorTexto);
-        campo.setBackground(COLOR_FONDO);
-        campo.setBorder(BorderFactory.createLineBorder(colorBorde, 2));
-        return campo;
+
+    private JPanel crearPanelContenido() {
+        JPanel panelContenido = new JPanel(new GridBagLayout());
+        panelContenido.setBackground(Theme.COLOR_FONDO);
+        panelContenido.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        JLabel labelBienvenida = new JLabel("Registro de nuevo usuario", JLabel.CENTER);
+        labelBienvenida.setFont(Theme.FONT_BOLD_LARGE);
+        labelBienvenida.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        panelContenido.add(labelBienvenida, gbc);
+
+        JLabel labelNombreReal = new JLabel("Nombre Completo:");
+        labelNombreReal.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelNombreReal.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
+        panelContenido.add(labelNombreReal, gbc);
+
+        campoNombreReal = new JTextField(15);
+        campoNombreReal.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoNombreReal.setForeground(Theme.COLOR_PRINCIPAL);
+        campoNombreReal.setBackground(Theme.COLOR_SECUNDARIO);
+        campoNombreReal.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 1;
+        panelContenido.add(campoNombreReal, gbc);
+
+        JLabel labelNombreUsuario = new JLabel("Usuario:");
+        labelNombreUsuario.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelNombreUsuario.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 2;
+        panelContenido.add(labelNombreUsuario, gbc);
+
+        campoNombreUsuario = new JTextField(15);
+        campoNombreUsuario.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoNombreUsuario.setForeground(Theme.COLOR_PRINCIPAL);
+        campoNombreUsuario.setBackground(Theme.COLOR_SECUNDARIO);
+        campoNombreUsuario.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 2;
+        panelContenido.add(campoNombreUsuario, gbc);
+
+        JLabel labelPassword = new JLabel("Contraseña:");
+        labelPassword.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelPassword.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 3;
+        panelContenido.add(labelPassword, gbc);
+
+        campoPassword = new JPasswordField(15);
+        campoPassword.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoPassword.setForeground(Theme.COLOR_PRINCIPAL);
+        campoPassword.setBackground(Theme.COLOR_SECUNDARIO);
+        campoPassword.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 3;
+        panelContenido.add(campoPassword, gbc);
+
+        JLabel labelConfirmarPassword = new JLabel("Confirmar Contraseña:");
+        labelConfirmarPassword.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelConfirmarPassword.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 4;
+        panelContenido.add(labelConfirmarPassword, gbc);
+
+        campoConfirmarPassword = new JPasswordField(15);
+        campoConfirmarPassword.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoConfirmarPassword.setForeground(Theme.COLOR_PRINCIPAL);
+        campoConfirmarPassword.setBackground(Theme.COLOR_SECUNDARIO);
+        campoConfirmarPassword.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 4;
+        panelContenido.add(campoConfirmarPassword, gbc);
+
+        JLabel labelEmail = new JLabel("Email:");
+        labelEmail.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelEmail.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 5;
+        panelContenido.add(labelEmail, gbc);
+
+        campoEmail = new JTextField(15);
+        campoEmail.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoEmail.setForeground(Theme.COLOR_PRINCIPAL);
+        campoEmail.setBackground(Theme.COLOR_SECUNDARIO);
+        campoEmail.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 5;
+        panelContenido.add(campoEmail, gbc);
+
+        JLabel labelTelefono = new JLabel("Teléfono:");
+        labelTelefono.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelTelefono.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 6;
+        panelContenido.add(labelTelefono, gbc);
+
+        campoTelefono = new JTextField(15);
+        campoTelefono.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoTelefono.setForeground(Theme.COLOR_PRINCIPAL);
+        campoTelefono.setBackground(Theme.COLOR_SECUNDARIO);
+        campoTelefono.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 6;
+        panelContenido.add(campoTelefono, gbc);
+
+        JLabel labelFechaNacimiento = new JLabel("Fecha de Nacimiento:");
+        labelFechaNacimiento.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelFechaNacimiento.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 7;
+        panelContenido.add(labelFechaNacimiento, gbc);
+
+        campoFechaNacimiento = new JDateChooser();
+        campoFechaNacimiento.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoFechaNacimiento.setBackground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 1; gbc.gridy = 7;
+        panelContenido.add(campoFechaNacimiento, gbc);
+
+        JLabel labelRutaFoto = new JLabel("URL de Foto:");
+        labelRutaFoto.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelRutaFoto.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 8;
+        panelContenido.add(labelRutaFoto, gbc);
+
+        campoRutaFoto = new JTextField(15);
+        campoRutaFoto.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoRutaFoto.setForeground(Theme.COLOR_PRINCIPAL);
+        campoRutaFoto.setBackground(Theme.COLOR_SECUNDARIO);
+        campoRutaFoto.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 8;
+        panelContenido.add(campoRutaFoto, gbc);
+
+        JLabel labelSaludo = new JLabel("Mensaje de Saludo:");
+        labelSaludo.setFont(Theme.FONT_BOLD_MEDIUM);
+        labelSaludo.setForeground(Theme.COLOR_SECUNDARIO);
+        gbc.gridx = 0; gbc.gridy = 9;
+        panelContenido.add(labelSaludo, gbc);
+
+        campoSaludo = new JTextField(15);
+        campoSaludo.setFont(Theme.FONT_PLAIN_MEDIUM);
+        campoSaludo.setForeground(Theme.COLOR_PRINCIPAL);
+        campoSaludo.setBackground(Theme.COLOR_SECUNDARIO);
+        campoSaludo.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        gbc.gridx = 1; gbc.gridy = 9;
+        panelContenido.add(campoSaludo, gbc);
+
+        JButton botonRegistrar = new JButton("Registrar");
+        botonRegistrar.setFont(Theme.FONT_BOLD_MEDIUM);
+        botonRegistrar.setForeground(Theme.COLOR_TEXTO);
+        botonRegistrar.setBackground(Theme.COLOR_ACENTO);
+        botonRegistrar.setFocusPainted(false);
+        botonRegistrar.addActionListener(e -> registrarUsuario());
+        gbc.gridx = 0; gbc.gridy = 10; gbc.gridwidth = 2;
+        panelContenido.add(botonRegistrar, gbc);
+
+        return panelContenido;
     }
 
-    private JPasswordField crearCampoPasswordPersonalizado(Color colorTexto, Color COLOR_FONDO, Color colorBorde) {
-        JPasswordField campo = new JPasswordField(15);
-        campo.setFont(new Font("Arial", Font.PLAIN, 14));
-        campo.setForeground(colorTexto);
-        campo.setBackground(COLOR_FONDO);
-        campo.setBorder(BorderFactory.createLineBorder(colorBorde, 2));
-        return campo;
-    }
+    private void registrarUsuario() {
+        String nombreReal = campoNombreReal.getText().trim();
+        String nombreUsuario = campoNombreUsuario.getText().trim();
+        String password = new String(campoPassword.getPassword());
+        String confirmarPassword = new String(campoConfirmarPassword.getPassword());
+        String email = campoEmail.getText().trim();
+        String telefono = campoTelefono.getText().trim();
+        Date fechaNacimiento = campoFechaNacimiento.getDate();
+        String rutaFoto = campoRutaFoto.getText().trim();
+        String saludo = campoSaludo.getText().trim();
 
-    private JButton crearBotonPersonalizado(String texto, ActionListener accion, Color colorFondo, Color colorTexto, Color colorHover) {
-        JButton boton = new JButton(texto) {
-            private static final long serialVersionUID = 1L;
+        if (nombreReal.isEmpty() || nombreUsuario.isEmpty() || password.isEmpty() || email.isEmpty() || telefono.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, complete todos los campos obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!telefono.matches("\\d{9,15}")) {
+            JOptionPane.showMessageDialog(this, "El teléfono debe ser un número válido", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!rutaFoto.isEmpty() && !rutaFoto.matches("https?://.*\\.(jpg|jpeg|png|gif)")) {
+            JOptionPane.showMessageDialog(this, "Por favor, ingrese una URL válida de una imagen", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            JOptionPane.showMessageDialog(this, "Por favor, ingrese un email válido", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(getModel().isArmed() ? colorHover.darker() : colorHover);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                super.paintComponent(g2d);
-                g2d.dispose();
+        LocalDate localFechaNacimiento = null;
+        if (fechaNacimiento != null) {
+            localFechaNacimiento = fechaNacimiento.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (localFechaNacimiento.isAfter(LocalDate.now())) {
+                JOptionPane.showMessageDialog(this, "La fecha de nacimiento no puede ser futura", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-        };
-        boton.setForeground(colorTexto);
-        boton.setFont(new Font("Arial", Font.BOLD, 14));
-        boton.setContentAreaFilled(false);
-        boton.setBorderPainted(false);
-        boton.setFocusPainted(false);
-        boton.addActionListener(accion);
-        return boton;
-    }
+        }
 
-    private JLabel crearLabel(String texto, int tamanoFuente, Color colorTexto) {
-        JLabel label = new JLabel(texto);
-        label.setFont(new Font("Arial", Font.BOLD, tamanoFuente));
-        label.setForeground(colorTexto);
-        return label;
+        if (controlador.registrarUsuario(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono, localFechaNacimiento, rutaFoto, saludo)) {
+            JOptionPane.showMessageDialog(this, "Registro exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
+            this.dispose();
+            VentanaLogin ventanaLogin = new VentanaLogin();
+            ventanaLogin.setVisible(true);
+        }
     }
 }

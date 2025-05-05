@@ -2,8 +2,7 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.util.List;
 import tds.BubbleText;
 import umu.tds.app.AppChat.Contacto;
@@ -24,9 +23,8 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         controlador = Controlador.getInstancia();
         controlador.addObserverChats(this);
         setLayout(new BorderLayout());
-        setBackground(Theme.COLOR_CHAT_BACKGROUND); // Fondo blanco
+        setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
-        // Encabezado
         contactLabel = new JLabel("Seleccione un contacto", SwingConstants.CENTER);
         contactLabel.setFont(Theme.FONT_BOLD_LARGE);
         contactLabel.setForeground(Theme.COLOR_TEXTO);
@@ -35,7 +33,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         contactLabel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, 0, Theme.PADDING_MEDIUM, 0));
         add(contactLabel, BorderLayout.NORTH);
 
-        // Panel de chat
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
@@ -45,8 +42,8 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         chatScrollPane.getVerticalScrollBar().setUnitIncrement(16);
         chatScrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
+        add(chatScrollPane, BorderLayout.CENTER);
 
-        // Panel de entrada
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         bottomPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
@@ -54,12 +51,13 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         messageInput = new JTextField();
         messageInput.setFont(Theme.FONT_PLAIN_MEDIUM);
         messageInput.setBackground(Theme.COLOR_SECUNDARIO);
-        messageInput.setForeground(Theme.COLOR_MESSAGE_TEXT); // Texto negro
+        messageInput.setForeground(Theme.COLOR_MESSAGE_TEXT);
+        messageInput.setPreferredSize(new Dimension(0, 30));
         bottomPanel.add(messageInput, BorderLayout.CENTER);
 
         JButton sendButton = new JButton("Enviar");
         sendButton.setBackground(Theme.COLOR_HOVER);
-        sendButton.setForeground(Theme.COLOR_TEXTO); // Texto blanco para contraste
+        sendButton.setForeground(Theme.COLOR_TEXTO);
         sendButton.setFont(Theme.FONT_BOLD_MEDIUM);
         sendButton.setFocusPainted(false);
         sendButton.setBorder(BorderFactory.createCompoundBorder(
@@ -69,7 +67,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         sendButton.addActionListener(new SendButtonListener());
         bottomPanel.add(sendButton, BorderLayout.EAST);
 
-        add(chatScrollPane, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
     }
 
@@ -96,6 +93,13 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             }
         } else {
             contactLabel.setText("Seleccione un contacto");
+            chatPanel.setBackground(Color.LIGHT_GRAY);
+            JLabel noContacto = new JLabel("Seleccione un contacto para comenzar", SwingConstants.CENTER);
+            noContacto.setFont(Theme.FONT_PLAIN_MEDIUM);
+            noContacto.setForeground(Theme.COLOR_TEXTO);
+            chatPanel.add(Box.createVerticalGlue());
+            chatPanel.add(noContacto);
+            chatPanel.add(Box.createVerticalGlue());
         }
         chatPanel.revalidate();
         chatPanel.repaint();
@@ -107,9 +111,9 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
     }
 
     private void addMessageBubble(String message, Color color, String author, int type) {
+        chatPanel.add(Box.createVerticalStrut(5));
         BubbleText bubble = new BubbleText(chatPanel, message, color, author, type);
-        // Asegurar que el texto dentro de BubbleText sea negro
-        bubble.setForeground(Theme.COLOR_MESSAGE_TEXT); // Ajusta si BubbleText lo permite
+        bubble.setForeground(Theme.COLOR_MESSAGE_TEXT);
         chatPanel.add(bubble);
         chatPanel.revalidate();
         chatPanel.repaint();
