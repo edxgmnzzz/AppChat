@@ -11,6 +11,7 @@ import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverChats;
 import umu.tds.app.AppChat.ObserverContactos;
 import umu.tds.app.AppChat.Theme;
+import umu.tds.app.AppChat.Usuario;
 
 public class VentanaSuperior extends JPanel implements ObserverChats, ObserverContactos {
     private static final long serialVersionUID = 1L;
@@ -30,6 +31,37 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
 
         JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         optionsPanel.setOpaque(false);
+        JTextField telefonoInput = new JTextField();
+        telefonoInput.setPreferredSize(new Dimension(130, 30));
+        telefonoInput.setToolTipText("Escribe número de teléfono...");
+        JButton chatPorNumeroButton = createStyledButton("Chat", e -> {
+            String telefono = telefonoInput.getText().trim();
+            if (!telefono.matches("\\d{9}")) {
+                JOptionPane.showMessageDialog(this, "Número inválido. Debe tener 9 dígitos.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Usuario destino = controlador.buscarUsuarioPorTelefono(telefono);
+            if (destino == null) {
+                JOptionPane.showMessageDialog(this, "No existe un usuario con ese número.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Crear contacto temporal si no está en la lista
+            boolean yaExiste = controlador.getUsuarioActual().getContactos().stream()
+                .filter(c -> c instanceof ContactoIndividual)
+                .map(c -> ((ContactoIndividual) c).getUsuario())
+                .anyMatch(u -> u != null && u.equals(destino));
+
+            Contacto contacto;
+            if (yaExiste) {
+                contacto = controlador.obtenerContactoPorUsuario(destino); // implementa esto si no lo tienes
+            } else {
+                contacto = new ContactoIndividual(destino.getName(), controlador.generarCodigoContacto(), destino.getTelefono(), destino);
+            }
+
+            controlador.setContactoActual(contacto);
+        }, "Iniciar chat por teléfono");
 
         contactos = new JComboBox<>();
         contactos.setRenderer(new CustomComboBoxRenderer());
@@ -48,6 +80,9 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
                 controlador.setContactoActual(contacto);
             }
         });
+        optionsPanel.add(telefonoInput);
+        optionsPanel.add(chatPorNumeroButton);
+
 
         searchButton = createStyledButton("Buscar", e -> {
             VentanaBusqueda ventana = new VentanaBusqueda();

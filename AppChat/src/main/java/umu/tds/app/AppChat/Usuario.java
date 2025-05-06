@@ -59,15 +59,20 @@ public class Usuario {
         return contactos != null ? Collections.unmodifiableList(contactos) : Collections.emptyList();
     }
 
-    public int getNumTelefono() {
-        try {
-            return Integer.parseInt(telefono);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
 
-    public ImageIcon getProfilePhotos() {
+    public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public void setTelefono(String telefono) {
+		this.telefono = telefono;
+	}
+
+	public ImageIcon getProfilePhotos() {
         return getFoto();
     }
 
