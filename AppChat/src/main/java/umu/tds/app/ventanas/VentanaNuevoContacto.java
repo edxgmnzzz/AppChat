@@ -153,7 +153,7 @@ public class VentanaNuevoContacto extends JDialog {
         }
 
         // CAMBIAR
-        ContactoIndividual contacto = new ContactoIndividual(nombre, controlador.generarCodigoContacto(), Integer.parseInt(telefono), null);
+        ContactoIndividual contacto = new ContactoIndividual(nombre, controlador.generarCodigoContacto(), telefono,  null);
         if (controlador.nuevoContacto(contacto)) {
             JOptionPane.showMessageDialog(this, "Contacto agregado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();

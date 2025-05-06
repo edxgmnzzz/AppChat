@@ -6,17 +6,17 @@ import java.util.Optional;
 import javax.swing.ImageIcon;
 
 public class ContactoIndividual extends Contacto {
-    private int movil;
+    private String telefono;
     private Usuario usuario;
 
-    public ContactoIndividual(String nombre, int codigo, int movil, Usuario usuario) {
+    public ContactoIndividual(String nombre, int codigo, String telefono, Usuario usuario) {
         super(nombre, codigo);
-        this.movil = movil;
+        this.telefono = telefono;
         this.usuario = usuario;
     }
 
-    public int getMovil() {
-        return movil;
+    public String getTelefono() {
+        return telefono;
     }
 
     public Usuario getUsuario() {
@@ -63,7 +63,7 @@ public class ContactoIndividual extends Contacto {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + movil;
+        result = prime * result + ((telefono == null) ? 0 : telefono.hashCode());
         return result;
     }
 
@@ -76,7 +76,12 @@ public class ContactoIndividual extends Contacto {
         if (getClass() != obj.getClass())
             return false;
         ContactoIndividual other = (ContactoIndividual) obj;
-        return movil == other.movil;
+        if (telefono == null) {
+            if (other.telefono != null)
+                return false;
+        } else if (!telefono.equals(other.telefono))
+            return false;
+        return true;
     }
 
     public boolean isUsuario(Usuario otherUsuario) {

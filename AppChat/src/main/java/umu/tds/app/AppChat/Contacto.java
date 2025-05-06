@@ -55,6 +55,10 @@ public abstract class Contacto {
         return enviados;
     }
 
+    public List<Mensaje> getMensajes() {
+        return new ArrayList<>(mensajes);
+    }
+
     public abstract List<Mensaje> getMensajesRecibidos(Optional<Usuario> usuario);
 
     public ImageIcon getFoto() {
