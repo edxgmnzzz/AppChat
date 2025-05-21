@@ -41,6 +41,9 @@ public abstract class Contacto {
         return codigo;
     }
 
+    public void setCodigo(int codigo) {
+    	this.codigo = codigo;
+    }
     public void sendMensaje(Mensaje mensaje) {
         mensajes.add(mensaje);
     }
@@ -64,4 +67,5 @@ public abstract class Contacto {
     public ImageIcon getFoto() {
         return new ImageIcon();
     }
+    
 }

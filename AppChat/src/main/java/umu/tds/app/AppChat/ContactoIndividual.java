@@ -18,7 +18,9 @@ public class ContactoIndividual extends Contacto {
     public String getTelefono() {
         return telefono;
     }
-
+    public void setCodigo(int codigo) {
+    	this.codigo = codigo;
+    }
     public Usuario getUsuario() {
         return usuario;
     }

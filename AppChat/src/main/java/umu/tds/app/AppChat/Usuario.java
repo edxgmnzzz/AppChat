@@ -15,8 +15,10 @@ public class Usuario {
     private ImageIcon foto;
     private boolean premium;
     private List<Contacto> contactos;
-
+    private int id;
+    
     public Usuario(String telefono, String nombre, String password, String email, String saludo, ImageIcon foto, boolean premium) {
+    	this.id = -1;
         this.telefono = telefono;
         this.nombre = nombre;
         this.password = password;
@@ -27,7 +29,15 @@ public class Usuario {
         this.contactos = new ArrayList<>();
     }
 
-    public String getTelefono() {
+    public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getTelefono() {
         return telefono;
     }
 

@@ -92,4 +92,9 @@ public class Grupo extends Contacto {
             return false;
         return true;
     }
+
+	public void setCodigo(int id) {
+		this.codigo = id;
+		
+	}
 }
