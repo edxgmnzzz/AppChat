@@ -19,8 +19,8 @@ public class VentanaNuevoGrupo extends JDialog {
     private DefaultListModel<String> availableModel;
     private DefaultListModel<String> selectedModel;
 
-    public VentanaNuevoGrupo(JDialog parent) {
-        super(parent, "Crear Nuevo Grupo", ModalityType.APPLICATION_MODAL);
+    public VentanaNuevoGrupo() {
+
         controlador = Controlador.getInstancia();
         configurarVentana();
         crearComponentes();

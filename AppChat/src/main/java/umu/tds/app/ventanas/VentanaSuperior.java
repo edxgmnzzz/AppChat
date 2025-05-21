@@ -159,6 +159,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         });
         return button;
     }
+    
 
     private void mostrarDialogoPremium() {
         JPanel panel = new JPanel(new BorderLayout());

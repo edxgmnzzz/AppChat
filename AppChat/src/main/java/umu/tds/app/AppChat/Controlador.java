@@ -81,12 +81,27 @@ public class Controlador {
         LOGGER.info("Cargando contactos individuales y grupos...");
         try {
             List<ContactoIndividual> individuales = contactoDAO.recuperarTodosContactos();
+            LOGGER.info("Se han recuperado " + (individuales != null ? individuales.size() : 0) + " contactos individuales.");
+
             List<Grupo> grupos = grupoDAO.recuperarTodosGrupos();
-            if (individuales != null) contactos.addAll(individuales);
-            if (grupos != null)    contactos.addAll(grupos);
+            LOGGER.info("Se han recuperado " + (grupos != null ? grupos.size() : 0) + " grupos.");
+
+            if (individuales != null) {
+                contactos.addAll(individuales);
+                LOGGER.info("Contactos individuales añadidos a la lista de contactos.");
+            }
+
+            if (grupos != null) {
+                for (Grupo g : grupos) {
+                    LOGGER.info("Grupo cargado: " + g.getNombre() + " con " + g.getParticipantes().size() + " miembros.");
+                }
+                contactos.addAll(grupos);
+                LOGGER.info("Grupos añadidos a la lista de contactos.");
+            } else {System.out.println("No hay grupos socio");}
         } catch (Exception e) {
-            LOGGER.severe("Error al cargar contactos o grupos: " + e.getMessage());
+            LOGGER.severe("❌ Error al cargar contactos o grupos: " + e.getMessage());
         }
+
 
         LOGGER.info("Cargando mensajes...");
         try {
@@ -268,12 +283,22 @@ public class Controlador {
     }
 
     public void crearGrupo(String nombre, List<ContactoIndividual> miembros) {
-        if (usuarioActual == null || nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) return;
-        if (contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) return;
-        int codigo = generarCodigoContacto();
-        Grupo grupo = new Grupo(nombre, codigo, miembros, usuarioActual);
+        LOGGER.info("Intentando crear grupo: " + nombre + " con " + miembros.size() + " miembros.");
+        
+        if (usuarioActual == null || nombre == null || nombre.trim().isEmpty() || miembros == null || miembros.isEmpty()) {
+            LOGGER.warning("Datos inválidos para crear grupo.");
+            return;
+        }
+        if (contactos.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) {
+            LOGGER.warning("Ya existe un contacto con nombre: " + nombre);
+            return;
+        }
+
+        Grupo grupo = new Grupo(nombre, 0, miembros, usuarioActual);
         contactos.add(grupo);
-        grupoDAO.registrarGrupo(grupo);
+
+        LOGGER.info("Registrando grupo en la base de datos con código: " + 0);
+        grupoDAO.registrarGrupo(grupo);  // <- Este debe funcionar
         notifyObserversChatsRecientes();
         notifyObserversListaContactos();
     }

@@ -105,12 +105,12 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         panelContenido.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        JPanel botonesPanel = new JPanel(new GridLayout(1, 3, 10, 0));
         botonesPanel.setBackground(Theme.COLOR_FONDO);
 
         JButton agregarContacto = createStyledButton("Agregar Contacto", e -> agregarContacto());
         JButton eliminarContacto = createStyledButton("Eliminar Contacto", e -> eliminarContacto());
-        JButton crearGrupo = createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo(this));
+        JButton crearGrupo = createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo().setVisible(true));
 
         botonesPanel.add(agregarContacto);
         botonesPanel.add(eliminarContacto);
