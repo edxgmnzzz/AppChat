@@ -3,6 +3,8 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.Arrays;
+
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverChats;
@@ -20,10 +22,11 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         setLayout(new BorderLayout());
         setBackground(Theme.COLOR_FONDO);
         setPreferredSize(new Dimension(200, 0));
-        setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL), "Chats", 
+        setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL), "Chats",
             TitledBorder.CENTER, TitledBorder.TOP, Theme.FONT_BOLD_MEDIUM, Theme.COLOR_TEXTO));
 
-        chatList = new JList<>(controlador.getChatsRecientes());
+        // Inicializar chatList con un array vacío y luego actualizarlo
+        chatList = new JList<>(new String[0]);
         chatList.setCellRenderer(new CustomChatListRenderer());
         chatList.setBackground(Theme.COLOR_SECUNDARIO);
 
@@ -44,14 +47,18 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         add(scrollPane, BorderLayout.CENTER);
 
-        sincronizarSeleccionConContactoActual();
+        // Forzar actualización inicial después de construir la ventana
+        SwingUtilities.invokeLater(() -> {
+            updateChatsRecientes(controlador.getChatsRecientes()); // Actualizar manualmente con los chats actuales
+            sincronizarSeleccionConContactoActual(); // Asegurar que el contacto actual se seleccione
+        });
     }
-
     public JList<String> getChatList() {
         return chatList;
     }
 
     public void actualizarLista(String[] chatsRecientes) {
+
         SwingUtilities.invokeLater(() -> {
             chatList.setListData(chatsRecientes);
             if (chatsRecientes.length == 1 && chatsRecientes[0].equals("No hay chats recientes")) {
@@ -78,10 +85,12 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
 
     private void sincronizarSeleccionConContactoActual() {
         Contacto contactoActual = controlador.getContactoActual();
-        if (contactoActual != null) {
-            String chatSeleccionado = "Chat con " + contactoActual.getNombre();
-            chatList.setSelectedValue(chatSeleccionado, true);
-        } else if (chatList.getModel().getSize() > 0 && !chatList.getModel().getElementAt(0).equals("No hay chats recientes")) {
+        String currentSelection = chatList.getSelectedValue();
+        String expectedSelection = contactoActual != null ? "Chat con " + contactoActual.getNombre() : null;
+        if (contactoActual != null && !expectedSelection.equals(currentSelection)) {
+            chatList.setSelectedValue(expectedSelection, true);
+        } else if (contactoActual == null && chatList.getModel().getSize() > 0 
+                  && !chatList.getModel().getElementAt(0).equals("No hay chats recientes")) {
             chatList.setSelectedIndex(0);
         }
     }
@@ -89,6 +98,7 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
     @Override
     public void updateChatsRecientes(String[] chatsRecientes) {
         actualizarLista(chatsRecientes);
+        System.out.println("Actualizando lista de chats recientes: " + Arrays.toString(chatsRecientes));
     }
 
     @Override

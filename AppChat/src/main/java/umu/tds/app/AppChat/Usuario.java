@@ -13,6 +13,7 @@ public class Usuario {
     private String email;
     private String saludo;
     private ImageIcon foto;
+    private String urlFoto;
     private boolean premium;
     private List<Contacto> contactos;
     private int id;
@@ -108,6 +109,13 @@ public class Usuario {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
+    }
+    public String getUrlFoto() {
+        return urlFoto;
+    }
+
+    public void setUrlFoto(String url) {
+        this.urlFoto = url;
     }
 
     public void setContactos(List<Contacto> contactos) {

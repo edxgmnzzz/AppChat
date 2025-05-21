@@ -27,6 +27,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
     private boolean isSending = false;
 
     public VentanaChatActual() {
+
         controlador = Controlador.getInstancia();
         controlador.addObserverChats(this);
         setLayout(new BorderLayout());
@@ -140,6 +141,10 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         bottomPanel.add(sendButton, BorderLayout.EAST);
 
         panelInterno.add(bottomPanel, BorderLayout.SOUTH);
+        SwingUtilities.invokeLater(() -> {
+            contactoActual = controlador.getContactoActual();
+            updateChat();
+        });
     }
 
 
@@ -148,32 +153,38 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
 
     @Override
     public void updateContactoActual(Contacto contacto) {
+        LOGGER.info("updateContactoActual llamado con: " + (contacto != null ? contacto.getNombre() : "null"));
         contactoActual = contacto;
         updateChat();
-
-        // Mostrar botón "Añadir a contactos" si es necesario
-        boolean esContacto = controlador.getUsuarioActual().getContactos().stream()
+        boolean esContacto = controlador.getUsuarioActual() != null && controlador.getUsuarioActual().getContactos().stream()
             .filter(c -> c instanceof ContactoIndividual)
             .map(c -> ((ContactoIndividual) c).getTelefono())
-            .anyMatch(movil -> 
-                contactoActual instanceof ContactoIndividual actual && 
-                movil == actual.getTelefono());
-
+            .anyMatch(movil -> contactoActual instanceof ContactoIndividual actual && movil.equals(actual.getTelefono()));
         btnAgregarContacto.setVisible(contactoActual instanceof ContactoIndividual && !esContacto);
     }
 
     public void updateChat() {
         chatPanel.removeAll();
+
         if (contactoActual != null) {
             contactLabel.setText("Chat con " + contactoActual.getNombre());
             List<String> mensajes = controlador.obtenerMensajes(contactoActual);
-            for (String mensaje : mensajes) {
-                if (mensaje.startsWith("Tú: ")) {
-                    addMessageBubble(mensaje.substring(4), Theme.COLOR_BUBBLE_SENT, controlador.getNombreUserActual(), BubbleText.SENT);
-                } else {
-                    String autor = mensaje.substring(0, mensaje.indexOf(": "));
-                    String texto = mensaje.substring(mensaje.indexOf(": ") + 2);
-                    addMessageBubble(texto, Theme.COLOR_BUBBLE_RECEIVED, autor, BubbleText.RECEIVED);
+            if (mensajes.isEmpty()) {
+                JLabel vacio = new JLabel("No hay mensajes en esta conversación.");
+                vacio.setFont(Theme.FONT_PLAIN_MEDIUM);
+                vacio.setForeground(Theme.COLOR_TEXTO);
+                vacio.setAlignmentX(Component.CENTER_ALIGNMENT);
+                chatPanel.add(Box.createVerticalStrut(20));
+                chatPanel.add(vacio);
+            } else {
+                for (String mensaje : mensajes) {
+                    if (mensaje.startsWith("Tú: ")) {
+                        addMessageBubble(mensaje.substring(4), Theme.COLOR_BUBBLE_SENT, controlador.getNombreUserActual(), BubbleText.SENT);
+                    } else {
+                        String autor = mensaje.substring(0, mensaje.indexOf(": "));
+                        String texto = mensaje.substring(mensaje.indexOf(": ") + 2);
+                        addMessageBubble(texto, Theme.COLOR_BUBBLE_RECEIVED, autor, BubbleText.RECEIVED);
+                    }
                 }
             }
         } else {
@@ -186,6 +197,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             chatPanel.add(noContacto);
             chatPanel.add(Box.createVerticalGlue());
         }
+
         chatPanel.revalidate();
         chatPanel.repaint();
 
@@ -194,7 +206,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             verticalBar.setValue(verticalBar.getMaximum());
         });
     }
-
     private void addMessageBubble(String message, Color color, String author, int type) {
         chatPanel.add(Box.createVerticalStrut(5));
 
