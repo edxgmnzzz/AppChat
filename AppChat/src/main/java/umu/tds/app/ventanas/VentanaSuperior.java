@@ -133,7 +133,8 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
 
         add(userPanel, BorderLayout.EAST);
 
-        inicializarContactoActual();
+        SwingUtilities.invokeLater(this::inicializarContactoActual); // Asegurar que se ejecute tras la inicialización
+        
     }
 
     private JButton createStyledButton(String text, ActionListener action, String tooltip) {
@@ -188,24 +189,16 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
     }
 
     public void inicializarContactoActual() {
-        String[] chatsRecientes = controlador.getChatsRecientes();
-        if (chatsRecientes.length > 0 && !chatsRecientes[0].equals("No hay chats recientes")) {
-            String primerChat = chatsRecientes[0].substring(9);
-            Contacto contactoInicial = controlador.obtenerContactoPorNombre(primerChat);
-            if (contactoInicial != null) {
-                controlador.setContactoActual(contactoInicial);
-                String prefixedName = (contactoInicial instanceof ContactoIndividual) 
-                    ? "Individual: " + contactoInicial.getNombre() 
-                    : "Grupo: " + contactoInicial.getNombre();
-                contactos.setSelectedItem(prefixedName);
-            } else {
-                contactos.setSelectedIndex(0);
-            }
+        Contacto contactoInicial = controlador.getContactoActual();
+        if (contactoInicial != null) {
+            String prefixedName = (contactoInicial instanceof ContactoIndividual)
+                ? "Individual: " + contactoInicial.getNombre()
+                : "Grupo: " + contactoInicial.getNombre();
+            contactos.setSelectedItem(prefixedName);
         } else {
             contactos.setSelectedIndex(0);
         }
     }
-
     private void actualizarContactosDropdown() {
         contactos.removeAllItems();
         contactos.addItem("Seleccione un contacto...");
