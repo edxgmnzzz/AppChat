@@ -102,6 +102,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
 
 
         logoutButton = createStyledButton("Cerrar Sesión", e -> cerrarSesion(), "Cerrar sesión");
+        JButton exportPdfButton = createStyledButton("Exportar PDF", e -> exportarPDF(), "Exportar datos y mensajes a PDF");
 
 
         optionsPanel.add(contactos);
@@ -110,6 +111,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         optionsPanel.add(premiumButton);
         optionsPanel.add(settingsButton);
         optionsPanel.add(logoutButton);
+        optionsPanel.add(exportPdfButton);
 
         add(optionsPanel, BorderLayout.WEST);
 
@@ -162,31 +164,28 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
     
 
     private void mostrarDialogoPremium() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Theme.COLOR_FONDO);
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel mensaje = new JLabel(controlador.isPremiumUserActual() ? 
-            "Ya eres Premium!" : "¿Quieres hacerte Premium socio?");
-        mensaje.setFont(Theme.FONT_BOLD_MEDIUM);
-        mensaje.setForeground(Theme.COLOR_TEXTO);
-        panel.add(mensaje, BorderLayout.CENTER);
-
-        if (!controlador.isPremiumUserActual()) {
-            JButton activarButton = createStyledButton("Activar Premium", e -> {
-                controlador.activarPremium();
-                JOptionPane.showMessageDialog(this, "Cuenta Premium activada", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            }, "Botón activar");
-            panel.add(activarButton, BorderLayout.SOUTH);
+        if (controlador.isPremiumUserActual()) {
+            JOptionPane.showMessageDialog(this, "Ya eres Premium!", "Información", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            controlador.activarPremiumConDescuento();
         }
-
-        JOptionPane.showConfirmDialog(this, panel, "Hazte Premium", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
     }
 
     private void cerrarSesion() {
         controlador.cerrarSesion();
         SwingUtilities.getWindowAncestor(this).dispose();
         new VentanaLogin().setVisible(true);
+    }
+    private void exportarPDF() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar PDF");
+        fileChooser.setSelectedFile(new java.io.File("ExportacionAppChat.pdf"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            String path = fileChooser.getSelectedFile().getAbsolutePath();
+            controlador.exportarPdfConDatos(path);
+        }
     }
 
     public void inicializarContactoActual() {

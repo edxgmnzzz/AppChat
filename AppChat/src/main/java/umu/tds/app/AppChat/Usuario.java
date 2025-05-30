@@ -1,5 +1,6 @@
 package umu.tds.app.AppChat;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +18,8 @@ public class Usuario {
     private boolean premium;
     private List<Contacto> contactos;
     private int id;
+    private LocalDate fechaRegistro;
+
     
     public Usuario(String telefono, String nombre, String password, String email, String saludo, ImageIcon foto, boolean premium) {
     	this.id = -1;
@@ -28,6 +31,8 @@ public class Usuario {
         this.foto = foto;
         this.premium = premium;
         this.contactos = new ArrayList<>();
+        this.fechaRegistro = LocalDate.now();
+
     }
 
     public int getId() {
@@ -78,6 +83,8 @@ public class Usuario {
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
 	}
+	public LocalDate getFechaRegistro() { return fechaRegistro; }
+	public void setFechaRegistro(LocalDate fecha) { this.fechaRegistro = fecha; }
 
 	public void setTelefono(String telefono) {
 		this.telefono = telefono;
