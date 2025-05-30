@@ -3,6 +3,9 @@
 package umu.tds.app.AppChat;
 
 import java.awt.Image;
+
+
+import java.io.FileOutputStream;
 import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.net.URL;
@@ -14,6 +17,11 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfWriter;
 
 import umu.tds.app.persistencia.*;
 
@@ -436,14 +444,128 @@ public class Controlador {
             }
         }
     }
+    
+    public boolean exportarPdfConDatos(String rutaDestino) {
+        if (usuarioActual == null || !usuarioActual.isPremium()) {
+            JOptionPane.showMessageDialog(null, "Solo los usuarios Premium pueden exportar a PDF.", "Acceso denegado", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        Document document = new Document();
+        try {
+            PdfWriter.getInstance(document, new FileOutputStream(rutaDestino));
+            document.open();
+
+            Font tituloFont = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD);
+            Font seccionFont = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD);
+            Font normalFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+
+            document.add(new Paragraph("Exportación de datos AppChat", tituloFont));
+            document.add(new Paragraph("Usuario: " + usuarioActual.getName() + " (" + usuarioActual.getTelefono() + ")\n\n", normalFont));
+
+            // Exportar contactos individuales
+            document.add(new Paragraph("Contactos Individuales", seccionFont));
+            for (Contacto c : obtenerContactos()) {
+                if (c instanceof ContactoIndividual ci) {
+                    document.add(new Paragraph("Nombre: " + ci.getNombre(), normalFont));
+                    document.add(new Paragraph("Teléfono: " + ci.getTelefono() + "\n", normalFont));
+                }
+            }
+
+            // Exportar grupos
+            document.add(new Paragraph("\nGrupos", seccionFont));
+            for (Contacto c : obtenerContactos()) {
+                if (c instanceof Grupo grupo) {
+                    document.add(new Paragraph("Grupo: " + grupo.getNombre(), normalFont));
+                    for (ContactoIndividual miembro : grupo.getParticipantes()) {
+                        document.add(new Paragraph("  - " + miembro.getNombre() + " (" + miembro.getTelefono() + ")", normalFont));
+                    }
+                    document.add(new Paragraph("\n", normalFont));
+                }
+            }
+
+            // Exportar mensajes de conversaciones individuales
+            document.add(new Paragraph("\nMensajes Intercambiados", seccionFont));
+            for (Contacto c : obtenerContactos()) {
+                if (c instanceof ContactoIndividual ci) {
+                    document.add(new Paragraph("Conversación con: " + ci.getNombre(), normalFont));
+
+                    List<String> mensajes = obtenerMensajes(ci);
+                    for (String mensaje : mensajes) {
+                        document.add(new Paragraph("  " + mensaje, normalFont));
+                    }
+                    document.add(new Paragraph("\n", normalFont));
+                }
+            }
+
+            document.close();
+            JOptionPane.showMessageDialog(null, "PDF generado correctamente en: " + rutaDestino, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al generar el PDF: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+    
     public Usuario buscarUsuarioPorTelefono(String telefono) {
         return usuariosRegistrados.get(telefono);
     }
     
-    public void activarPremium() {
-        if (usuarioActual != null) {
+    public void activarPremiumConDescuento() {
+        if (usuarioActual == null) return;
+
+        double precioBase = 100.0;
+
+        CalculadoraDescuentos calculadora = new CalculadoraDescuentos(usuarioActual, this);
+        String resultado = calculadora.calcularDescuentos(precioBase);
+
+        int confirm = JOptionPane.showConfirmDialog(null, resultado + "\n¿Desea activar Premium?", 
+                                                     "Resumen de descuentos", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
             usuarioActual.setPremium(true);
+            usuarioDAO.modificarUsuario(usuarioActual);  // Persistimos el cambio
+            JOptionPane.showMessageDialog(null, "¡Felicidades! Ya eres usuario Premium.");
         }
     }
+    public List<Mensaje> buscarMensajes(String textoFiltro, String telefonoFiltro, String nombreFiltro) {
+        List<Mensaje> resultados = new ArrayList<>();
+
+        for (Contacto contacto : obtenerContactos()) {
+            for (Mensaje mensaje : contacto.getMensajes()) {
+                boolean cumpleTexto = (textoFiltro == null || textoFiltro.isBlank()) 
+                        || mensaje.getTexto().toLowerCase().contains(textoFiltro.toLowerCase());
+
+                boolean cumpleTelefono = (telefonoFiltro == null || telefonoFiltro.isBlank()) 
+                        || mensaje.getEmisor().getTelefono().equals(telefonoFiltro) 
+                        || (mensaje.getReceptor() instanceof ContactoIndividual ci && ci.getTelefono().equals(telefonoFiltro));
+
+                boolean cumpleNombre = (nombreFiltro == null || nombreFiltro.isBlank())
+                        || mensaje.getEmisor().getName().equalsIgnoreCase(nombreFiltro)
+                        || (mensaje.getReceptor() instanceof ContactoIndividual ci && ci.getNombre().equalsIgnoreCase(nombreFiltro))
+                        || (mensaje.getReceptor() instanceof Grupo g && g.getNombre().equalsIgnoreCase(nombreFiltro));
+
+                if (cumpleTexto && cumpleTelefono && cumpleNombre) {
+                    resultados.add(mensaje);
+                }
+            }
+        }
+
+        // Puedes devolver ordenado si lo deseas
+        resultados.sort(Comparator.comparing(Mensaje::getHora));
+        return resultados;
+    }
+
+
+
+    public int contarMensajesDelUsuario(Usuario usuario) {
+        return (int) obtenerContactos().stream()
+                .flatMap(c -> c.getMensajes().stream())
+                .filter(m -> m.getEmisor().equals(usuario))
+                .count();
+    }
+
+
 
 } 

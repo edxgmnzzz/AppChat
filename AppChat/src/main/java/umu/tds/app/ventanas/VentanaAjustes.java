@@ -122,17 +122,28 @@ public class VentanaAjustes extends JDialog {
         gbc.gridy = 5;
         panelContenido.add(new JLabel("URL Foto:"), gbc);
         gbc.gridx = 1;
-        fotoField = new JTextField(20);
+        // ⚠ Aquí cargamos el URL actual desde el usuario
+        fotoField = new JTextField(controlador.getUsuarioActual().getUrlFoto(), 20);
         panelContenido.add(fotoField, gbc);
 
+        // ✅ Mostramos Premium pero no editable
         gbc.gridx = 0;
         gbc.gridy = 6;
+        panelContenido.add(new JLabel("Premium:"), gbc);
+        gbc.gridx = 1;
+        JTextField premiumField = new JTextField(controlador.isPremiumUserActual() ? "Sí" : "No", 20);
+        premiumField.setEditable(false);
+        panelContenido.add(premiumField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 7;
         gbc.gridwidth = 2;
         JButton guardarButton = createStyledButton("Guardar Cambios", e -> guardarCambios());
         panelContenido.add(guardarButton, gbc);
 
         return panelContenido;
     }
+
 
     private JButton createStyledButton(String text, ActionListener action) {
         JButton button = new JButton(text);
@@ -156,16 +167,21 @@ public class VentanaAjustes extends JDialog {
         return button;
     }
 
-    private void guardarCambios() {
-        String nuevoNombre = nombreField.getText().trim();
-        String nuevaPassword = new String(passwordField.getPassword()).trim();
-        String nuevoSaludo = saludoField.getText().trim();
-        String nuevaFoto = fotoField.getText().trim();
-        if (controlador.actualizarUsuario(nuevoNombre, nuevaPassword.isEmpty() ? controlador.getUsuarioActual().getPassword() : nuevaPassword, nuevoSaludo, nuevaFoto)) {
-            JOptionPane.showMessageDialog(this, "Perfil actualizado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this, "Error al actualizar el perfil", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+private void guardarCambios() {
+    String nuevoNombre = nombreField.getText().trim();
+    String nuevaPassword = new String(passwordField.getPassword()).trim();
+    String nuevoSaludo = saludoField.getText().trim();
+    String nuevaFoto = fotoField.getText().trim();  // ahora sí contiene la URL actual si no la cambias
+
+    if (controlador.actualizarUsuario(nuevoNombre, 
+        nuevaPassword.isEmpty() ? controlador.getUsuarioActual().getPassword() : nuevaPassword, 
+        nuevoSaludo, nuevaFoto)) {
+
+        JOptionPane.showMessageDialog(this, "Perfil actualizado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
+    } else {
+        JOptionPane.showMessageDialog(this, "Error al actualizar el perfil", "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
+
 }
