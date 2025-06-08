@@ -7,12 +7,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import tds.BubbleText;
-import umu.tds.app.AppChat.Contacto;
-import umu.tds.app.AppChat.ContactoIndividual;
-import umu.tds.app.AppChat.Controlador;
-import umu.tds.app.AppChat.ObserverChats;
-import umu.tds.app.AppChat.Theme;
-import umu.tds.app.AppChat.Usuario;
+import umu.tds.app.AppChat.*;
 
 public class VentanaChatActual extends JPanel implements ObserverChats {
     private static final long serialVersionUID = 1L;
@@ -27,18 +22,15 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
     private boolean isSending = false;
 
     public VentanaChatActual() {
-
         controlador = Controlador.getInstancia();
         controlador.addObserverChats(this);
         setLayout(new BorderLayout());
         setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
-        // Contenedor principal del área de chat
         JPanel panelInterno = new JPanel(new BorderLayout());
         panelInterno.setBackground(Theme.COLOR_CHAT_BACKGROUND);
         add(panelInterno, BorderLayout.CENTER);
 
-        // Panel superior con etiqueta del nombre del contacto
         contactLabel = new JLabel("Seleccione un contacto", SwingConstants.LEFT);
         contactLabel.setFont(Theme.FONT_BOLD_LARGE);
         contactLabel.setForeground(Theme.COLOR_TEXTO);
@@ -51,7 +43,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         topPanel.add(contactLabel, BorderLayout.WEST);
         panelInterno.add(topPanel, BorderLayout.NORTH);
 
-        // Botón "Añadir a contactos"
         JPanel contactoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         contactoPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
         contactoPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -67,19 +58,16 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         btnAgregarContacto.addActionListener(e -> agregarContactoDesconocido());
         contactoPanel.add(btnAgregarContacto);
 
-        // Panel de mensajes reales
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
-        // Envoltorio con el botón + mensajes
         JPanel chatWrapper = new JPanel();
         chatWrapper.setLayout(new BoxLayout(chatWrapper, BoxLayout.Y_AXIS));
         chatWrapper.setBackground(Theme.COLOR_CHAT_BACKGROUND);
-        chatWrapper.add(contactoPanel);  // botón arriba
-        chatWrapper.add(chatPanel);      // mensajes debajo
+        chatWrapper.add(contactoPanel);
+        chatWrapper.add(chatPanel);
 
-        // Scroll con todo dentro
         chatScrollPane = new JScrollPane(chatWrapper);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -87,19 +75,16 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         chatScrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         panelInterno.add(chatScrollPane, BorderLayout.CENTER);
 
-        // Panel inferior con input + enviar + emoji
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         bottomPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
 
-        // Botón emoji
         JButton emojiButton = new JButton("😀");
         emojiButton.setPreferredSize(new Dimension(40, 30));
         emojiButton.setFocusPainted(false);
         emojiButton.setBackground(Theme.COLOR_SECUNDARIO);
         emojiButton.setFont(Theme.FONT_BOLD_MEDIUM);
 
-        // Menú emergente con emoticonos
         JPopupMenu emojiMenu = new JPopupMenu();
         for (int i = 0; i < 8; i++) {
             ImageIcon icon = BubbleText.getEmoji(i);
@@ -112,13 +97,9 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             emojiMenu.add(item);
         }
 
-        emojiButton.addActionListener(e -> {
-            emojiMenu.show(emojiButton, 0, emojiButton.getHeight());
-        });
-
+        emojiButton.addActionListener(e -> emojiMenu.show(emojiButton, 0, emojiButton.getHeight()));
         bottomPanel.add(emojiButton, BorderLayout.WEST);
 
-        // Campo de entrada de texto
         messageInput = new JTextField();
         messageInput.setFont(Theme.FONT_PLAIN_MEDIUM);
         messageInput.setBackground(Theme.COLOR_SECUNDARIO);
@@ -127,7 +108,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         messageInput.addActionListener(new SendButtonListener());
         bottomPanel.add(messageInput, BorderLayout.CENTER);
 
-        // Botón Enviar
         JButton sendButton = new JButton("Enviar");
         sendButton.setBackground(Theme.COLOR_HOVER);
         sendButton.setForeground(Theme.COLOR_TEXTO);
@@ -135,8 +115,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         sendButton.setFocusPainted(false);
         sendButton.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)));
         sendButton.addActionListener(new SendButtonListener());
         bottomPanel.add(sendButton, BorderLayout.EAST);
 
@@ -147,7 +126,6 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         });
     }
 
-
     @Override
     public void updateChatsRecientes(String[] chatsRecientes) {}
 
@@ -156,11 +134,16 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         LOGGER.info("updateContactoActual llamado con: " + (contacto != null ? contacto.getNombre() : "null"));
         contactoActual = contacto;
         updateChat();
-        boolean esContacto = controlador.getUsuarioActual() != null && controlador.getUsuarioActual().getContactos().stream()
-            .filter(c -> c instanceof ContactoIndividual)
-            .map(c -> ((ContactoIndividual) c).getTelefono())
-            .anyMatch(movil -> contactoActual instanceof ContactoIndividual actual && movil.equals(actual.getTelefono()));
-        btnAgregarContacto.setVisible(contactoActual instanceof ContactoIndividual && !esContacto);
+        if (contactoActual instanceof ContactoIndividual actual) {
+            boolean yaExiste = controlador.getUsuarioActual().getContactos().stream()
+                .filter(c -> c instanceof ContactoIndividual)
+                .map(c -> ((ContactoIndividual) c).getTelefono())
+                .anyMatch(tel -> tel.equals(actual.getTelefono()));
+            btnAgregarContacto.setVisible(!yaExiste);
+        } else {
+            btnAgregarContacto.setVisible(false);
+        }
+
     }
 
     public void updateChat() {
@@ -188,14 +171,8 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                 }
             }
         } else {
-            contactLabel.setText("Seleccione un contacto");
-            chatPanel.setBackground(Color.LIGHT_GRAY);
-            JLabel noContacto = new JLabel("Seleccione un contacto para comenzar", SwingConstants.CENTER);
-            noContacto.setFont(Theme.FONT_PLAIN_MEDIUM);
-            noContacto.setForeground(Theme.COLOR_TEXTO);
-            chatPanel.add(Box.createVerticalGlue());
-            chatPanel.add(noContacto);
-            chatPanel.add(Box.createVerticalGlue());
+            chatPanel.removeAll();
+            chatPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
         }
 
         chatPanel.revalidate();
@@ -206,25 +183,23 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
             verticalBar.setValue(verticalBar.getMaximum());
         });
     }
+
     private void addMessageBubble(String message, Color color, String author, int type) {
         chatPanel.add(Box.createVerticalStrut(5));
-
         BubbleText bubble;
         if (message.startsWith("emoji:")) {
             try {
                 int emojiId = Integer.parseInt(message.substring(6));
-                bubble = new BubbleText(chatPanel, emojiId, color, author, type, 18); // 18 es el tamaño sugerido
+                bubble = new BubbleText(chatPanel, emojiId, color, author, type, 18);
             } catch (NumberFormatException e) {
                 bubble = new BubbleText(chatPanel, message, color, author, type);
             }
         } else {
             bubble = new BubbleText(chatPanel, message, color, author, type);
         }
-
         bubble.setForeground(Theme.COLOR_MESSAGE_TEXT);
         chatPanel.add(bubble);
     }
-
 
     private class SendButtonListener implements ActionListener {
         @Override
@@ -246,9 +221,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                     }
                 });
             } else {
-                JOptionPane.showMessageDialog(VentanaChatActual.this,
-                    "Por favor, seleccione un contacto y escriba un mensaje",
-                    "Error", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(VentanaChatActual.this, "Por favor, seleccione un contacto y escriba un mensaje", "Error", JOptionPane.WARNING_MESSAGE);
             }
         }
     }
