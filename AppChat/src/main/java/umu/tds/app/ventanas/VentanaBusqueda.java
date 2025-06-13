@@ -153,7 +153,7 @@ public class VentanaBusqueda extends JFrame {
             for (Mensaje m : resultados) {
                 String linea = String.format("[%s] %s -> %s: %s",
                     m.getHora().toString(),
-                    m.getEmisor().getName(),
+                    m.getEmisor().getNombre(),
                     m.getReceptor().getNombre(),
                     m.getTexto());
                 JLabel mensajeLabel = new JLabel(linea);

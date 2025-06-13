@@ -1,51 +1,28 @@
 package umu.tds.app.AppChat;
 
+import umu.tds.app.ventanas.VentanaLogin; // Podríamos usar la ventana de Login
 import umu.tds.app.ventanas.VentanaPrincipal;
 import javax.swing.SwingUtilities;
-
+//Lanzador.java
+//Lanzador.java
 public class Lanzador {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                Controlador controlador = Controlador.getInstancia();
-                String telefono = "1234567890";
-                String password = "admin";
+ public static void main(String[] args) {
+     SwingUtilities.invokeLater(() -> {
+         try {
+             // BORRA LA BASE DE DATOS ANTES DE EJECUTAR
+             Controlador controlador = Controlador.getInstancia(); // La simulación se ejecuta aquí dentro si es necesario
 
-                // Registrar solo si no existe
-                if (!controlador.existeUsuario(telefono)) {
-                    System.out.println("Usuario no encontrado. Registrando nuevo usuario...");
-                    boolean registrado = controlador.registrarUsuario(
-                        "Florentino Pérez",   // nombreReal
-                        "florentino",         // nombreUsuario
-                        password,
-                        password,
-                        "admin@gmail.com",
-                        telefono,
-                        "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Florentino_perez.jpg/220px-Florentino_perez.jpg",
-                        "Hala Madrid"
-                    );
-
-                    if (!registrado) {
-                        System.err.println("Error: No se pudo registrar el usuario por defecto.");
-                        System.exit(1);
-                    }
-                }
-
-                // Iniciar sesión
-                boolean loginExitoso = controlador.iniciarSesion(telefono, password);
-                if (loginExitoso) {
-                    VentanaPrincipal ventana = new VentanaPrincipal();
-                    ventana.setVisible(true);
-                } else {
-                    System.err.println("Error: No se pudo iniciar sesión.");
-                    System.exit(1);
-                }
-
-            } catch (Exception e) {
-                System.err.println("Error al iniciar la aplicación: " + e.getMessage());
-                e.printStackTrace();
-                System.exit(1);
-            }
-        });
-    }
+             // Iniciar sesión como Laporta para ver el mensaje recibido
+             boolean loginExitoso = controlador.iniciarSesion("600333444", "pass2");
+             
+             if (loginExitoso) {
+                 new VentanaPrincipal().setVisible(true);
+             } else {
+                 System.err.println("Login de prueba fallido.");
+             }
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
+     });
+ }
 }
