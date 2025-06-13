@@ -34,21 +34,17 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
 
     @Override
     public void registrarMensaje(Mensaje mensaje) {
-        if (mensaje == null || mensaje.getCodigo() > 0) {
-            return;
-        }
+    	if (mensaje == null || mensaje.getCodigo() > 0) return;
 
-        LOGGER.info("Registrando mensaje: \"" + mensaje.getTexto() + "\" a " +
-            (mensaje.getReceptor() != null ? mensaje.getReceptor().getNombre() : "receptor desconocido"));
-
-        // Asegurar que emisor y receptor están registrados
+        // Asegurar que el emisor esté persistido
         AdaptadorUsuarioTDS.getInstancia().registrarUsuario(mensaje.getEmisor());
-        if (mensaje.getReceptor() instanceof Grupo g) {
+        
+        // Asegurar que el contacto receptor esté persistido
+        if (mensaje.getReceptor() instanceof ContactoIndividual ci) {
+            AdaptadorContactoIndividualTDS.getInstancia().registrarContacto(ci);
+        } else if (mensaje.getReceptor() instanceof Grupo g) {
             AdaptadorGrupoTDS.getInstancia().registrarGrupo(g);
-        } else if (mensaje.getReceptor() instanceof ContactoIndividual c) {
-            AdaptadorContactoIndividualTDS.getInstancia().registrarContacto(c);
         }
-
         Entidad e = new Entidad();
         e.setNombre(ENTIDAD_MENSAJE);
         e.setPropiedades(List.of(
@@ -94,16 +90,18 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
                 ? AdaptadorGrupoTDS.getInstancia().recuperarGrupo(codReceptor)
                 : AdaptadorContactoIndividualTDS.getInstancia().recuperarContacto(codReceptor);
 
-            if (emisor == null || receptor == null) {
-                LOGGER.warning("Emisor o receptor no encontrados para mensaje ID " + codigo);
-                return null;
-            }
+            if (emisor == null || receptor == null) { /* ... */ }
 
+            // ¡Aquí está el problema! El objeto Mensaje se crea con el emisor y el receptor
+            // que acabas de recuperar. El objeto 'receptor' es el Contacto, y dentro tiene
+            // el nombre de "Florentino Pérez", pero el emisor también es "Florentino Pérez".
             Mensaje mensaje = new Mensaje(texto, hora, emisor, receptor);
             mensaje.setCodigo(codigo);
-            LOGGER.info("Mensaje recuperado: \"" + texto + "\" de " + emisor.getName() + " a " + receptor.getNombre());
+            
+            // Y aquí, para el log, imprimes `receptor.getNombre()`, que en el caso del Contacto
+            // con ID 24, es "Florentino Pérez".
+            LOGGER.info("Mensaje recuperado: \"" + texto + "\" de " + emisor.getNombre() + " a " + receptor.getNombre());
             return mensaje;
-
         } catch (Exception ex) {
             LOGGER.severe("Error al recuperar mensaje ID " + codigo + ": " + ex.getMessage());
             return null;

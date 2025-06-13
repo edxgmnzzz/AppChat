@@ -36,11 +36,11 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
         }
 
         if (contacto.getCodigo() > 0) {
-            LOGGER.info("Contacto ya persistido (ID=" + contacto.getCodigo() + "), no se registra: " + contacto.getNombre());
+            //LOGGER.info("Contacto ya persistido (ID=" + contacto.getCodigo() + "), no se registra: " + contacto.getNombre());
             return;
         }
 
-        LOGGER.info("Registrando contacto: " + contacto.getNombre() + ", teléfono: " + contacto.getTelefono());
+        //LOGGER.info("Registrando contacto: " + contacto.getNombre() + ", teléfono: " + contacto.getTelefono());
 
         String usuarioId = contacto.getUsuario() != null ? String.valueOf(contacto.getUsuario().getId()) : "";
 
@@ -56,12 +56,12 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
         eContacto = sp.registrarEntidad(eContacto);
         contacto.setCodigo(eContacto.getId());
 
-        LOGGER.info("Contacto registrado con ID persistente: " + contacto.getCodigo());
+        //LOGGER.info("Contacto registrado con ID persistente: " + contacto.getCodigo());
     }
 
     @Override
     public ContactoIndividual recuperarContacto(int codigo) {
-        LOGGER.info("Recuperando contacto con ID: " + codigo);
+        //LOGGER.info("Recuperando contacto con ID: " + codigo);
 
         Entidad e = sp.recuperarEntidad(codigo);
         if (e == null) {
@@ -90,7 +90,7 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
         ContactoIndividual contacto = new ContactoIndividual(nombre, codigo, movil, usuario);
         obtenerMensajes(codigosMensajes).forEach(contacto::sendMensaje);
 
-        LOGGER.info("Contacto recuperado: " + nombre + " (teléfono: " + movil + ")");
+        //LOGGER.info("Contacto recuperado: " + nombre + " (teléfono: " + movil + ")");
         return contacto;
     }
 
@@ -119,7 +119,7 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
 
     @Override
     public List<ContactoIndividual> recuperarTodosContactos() {
-        LOGGER.info("Recuperando todos los contactos individuales...");
+        //LOGGER.info("Recuperando todos los contactos individuales...");
         return sp.recuperarEntidades(ENTIDAD_CONTACTO).stream()
                 .map(e -> recuperarContacto(e.getId()))
                 .filter(Objects::nonNull)
@@ -128,14 +128,14 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
 
     @Override
     public void borrarContacto(ContactoIndividual contacto) {
-        LOGGER.info("Borrando contacto con ID: " + contacto.getCodigo());
+        //LOGGER.info("Borrando contacto con ID: " + contacto.getCodigo());
         Entidad e = sp.recuperarEntidad(contacto.getCodigo());
         sp.borrarEntidad(e);
     }
 
     @Override
     public void modificarContacto(ContactoIndividual contacto) {
-        LOGGER.info("Modificando contacto con ID: " + contacto.getCodigo());
+        //LOGGER.info("Modificando contacto con ID: " + contacto.getCodigo());
         Entidad e = sp.recuperarEntidad(contacto.getCodigo());
 
         sp.eliminarPropiedadEntidad(e, "nombre");

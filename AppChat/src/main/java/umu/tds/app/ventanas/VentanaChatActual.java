@@ -146,13 +146,19 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
 
     }
 
+// En la clase VentanaChatActual.java
+
     public void updateChat() {
-        chatPanel.removeAll();
+        chatPanel.removeAll(); // Limpiamos el panel de chat antes de redibujar
 
         if (contactoActual != null) {
             contactLabel.setText("Chat con " + contactoActual.getNombre());
-            List<String> mensajes = controlador.obtenerMensajes(contactoActual);
+            
+            // 1. Obtenemos la lista de objetos Mensaje del controlador
+            List<Mensaje> mensajes = controlador.getMensajes(contactoActual);
+
             if (mensajes.isEmpty()) {
+                // Si no hay mensajes, mostramos una etiqueta informativa
                 JLabel vacio = new JLabel("No hay mensajes en esta conversación.");
                 vacio.setFont(Theme.FONT_PLAIN_MEDIUM);
                 vacio.setForeground(Theme.COLOR_TEXTO);
@@ -160,30 +166,39 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                 chatPanel.add(Box.createVerticalStrut(20));
                 chatPanel.add(vacio);
             } else {
-                for (String mensaje : mensajes) {
-                    if (mensaje.startsWith("Tú: ")) {
-                        addMessageBubble(mensaje.substring(4), Theme.COLOR_BUBBLE_SENT, controlador.getNombreUserActual(), BubbleText.SENT);
+                // 2. Iteramos sobre cada objeto Mensaje
+                for (Mensaje msg : mensajes) {
+                    // 3. Determinamos si el mensaje fue enviado por el usuario actual
+                    boolean enviadoPorMi = msg.getEmisor().getTelefono().equals(controlador.getUsuarioActual().getTelefono());
+                    
+                    if (enviadoPorMi) {
+                        // Si lo envié yo, la burbuja es de tipo "SENT" y el autor es "Tú"
+                        addMessageBubble(msg.getTexto(), Theme.COLOR_BUBBLE_SENT, "Tú", BubbleText.SENT);
                     } else {
-                        String autor = mensaje.substring(0, mensaje.indexOf(": "));
-                        String texto = mensaje.substring(mensaje.indexOf(": ") + 2);
-                        addMessageBubble(texto, Theme.COLOR_BUBBLE_RECEIVED, autor, BubbleText.RECEIVED);
+                        // Si lo recibí, la burbuja es de tipo "RECEIVED"
+                        // y el autor es el nombre del emisor del mensaje.
+                        String autor = msg.getEmisor().getNombre();
+                        addMessageBubble(msg.getTexto(), Theme.COLOR_BUBBLE_RECEIVED, autor, BubbleText.RECEIVED);
                     }
                 }
             }
         } else {
+            // Si no hay ningún contacto seleccionado, limpiamos la cabecera y el panel
+            contactLabel.setText("Seleccione un contacto");
             chatPanel.removeAll();
             chatPanel.setBackground(Theme.COLOR_CHAT_BACKGROUND);
         }
 
+        // Revalidamos y repintamos el panel para que los cambios sean visibles
         chatPanel.revalidate();
         chatPanel.repaint();
 
+        // Hacemos que el scroll se mueva automáticamente al último mensaje
         SwingUtilities.invokeLater(() -> {
             JScrollBar verticalBar = chatScrollPane.getVerticalScrollBar();
             verticalBar.setValue(verticalBar.getMaximum());
         });
     }
-
     private void addMessageBubble(String message, Color color, String author, int type) {
         chatPanel.add(Box.createVerticalStrut(5));
         BubbleText bubble;
@@ -234,7 +249,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         String nombre = JOptionPane.showInputDialog(this, "Nombre para el nuevo contacto:", "Añadir Contacto", JOptionPane.PLAIN_MESSAGE);
         if (nombre != null && !nombre.trim().isEmpty()) {
             ContactoIndividual nuevo = new ContactoIndividual(nombre.trim(), controlador.generarCodigoContacto(), usuarioDesconocido.getTelefono(), usuarioDesconocido);
-            if (controlador.nuevoContacto(nuevo)) {
+            if (controlador.agregarContacto(nuevo)) {
                 JOptionPane.showMessageDialog(this, "Contacto añadido correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 btnAgregarContacto.setVisible(false);
             } else {
