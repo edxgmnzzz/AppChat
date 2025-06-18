@@ -58,12 +58,20 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
 
         e = sp.registrarEntidad(e);
         mensaje.setCodigo(e.getId());
+        
+        // Guardamos en el pool
+     	PoolDAO.getInstancia().addObjeto(mensaje.getCodigo(), mensaje);
         LOGGER.info("Mensaje registrado con ID: " + mensaje.getCodigo());
     }
 
     @Override
     public Mensaje recuperarMensaje(int codigo) {
         if (codigo <= 0) return null;
+
+        // ✅ 1. Comprobar si ya está en el Pool
+        if (PoolDAO.getInstancia().contiene(codigo)) {
+            return (Mensaje) PoolDAO.getInstancia().getObjeto(codigo);
+        }
 
         Entidad e = sp.recuperarEntidad(codigo);
         if (e == null) {
@@ -81,6 +89,15 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
 
             LocalDateTime hora = LocalDateTime.parse(horaTexto);
             int emoticono = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "emoticono"));
+
+            // ❗ Crear mensaje sin emisor ni receptor aún (esto es clave)
+            Mensaje mensaje = new Mensaje(texto, hora, null, null);
+            mensaje.setCodigo(codigo);
+
+            // ✅ 2. Guardar en el Pool ANTES de llamar a otros adaptadores
+            PoolDAO.getInstancia().addObjeto(codigo, mensaje);
+
+            // ✅ 3. Recuperar objetos relacionados
             int idEmisor = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "emisor"));
             int codReceptor = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "receptor"));
             boolean esGrupo = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "grupo"));
@@ -90,17 +107,16 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
                 ? AdaptadorGrupoTDS.getInstancia().recuperarGrupo(codReceptor)
                 : AdaptadorContactoIndividualTDS.getInstancia().recuperarContacto(codReceptor);
 
-            if (emisor == null || receptor == null) { /* ... */ }
+            if (emisor == null || receptor == null) {
+                LOGGER.warning("❌ Emisor o receptor nulo al recuperar mensaje con ID " + codigo);
+                return null;
+            }
 
-            // ¡Aquí está el problema! El objeto Mensaje se crea con el emisor y el receptor
-            // que acabas de recuperar. El objeto 'receptor' es el Contacto, y dentro tiene
-            // el nombre de "Florentino Pérez", pero el emisor también es "Florentino Pérez".
-            Mensaje mensaje = new Mensaje(texto, hora, emisor, receptor);
-            mensaje.setCodigo(codigo);
-            
-            // Y aquí, para el log, imprimes `receptor.getNombre()`, que en el caso del Contacto
-            // con ID 24, es "Florentino Pérez".
-            LOGGER.info("Mensaje recuperado: \"" + texto + "\" de " + emisor.getNombre() + " a " + receptor.getNombre());
+            // ✅ 4. Asignar emisor y receptor al mensaje
+            mensaje.setEmisor(emisor);
+            mensaje.setReceptor(receptor);
+
+            LOGGER.info("📥 Mensaje recuperado: \"" + texto + "\" de " + emisor.getNombre() + " a " + receptor.getNombre());
             return mensaje;
         } catch (Exception ex) {
             LOGGER.severe("Error al recuperar mensaje ID " + codigo + ": " + ex.getMessage());
@@ -108,16 +124,27 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
         }
     }
 
+
     @Override
     public List<Mensaje> recuperarTodosMensajes() {
         LOGGER.info("Recuperando todos los mensajes desde la base de datos...");
+        
         List<Mensaje> mensajes = sp.recuperarEntidades(ENTIDAD_MENSAJE).stream()
             .map(e -> recuperarMensaje(e.getId()))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+
         LOGGER.info("Mensajes recuperados: " + mensajes.size());
+
+        for (Mensaje m : mensajes) {
+            String emisor = m.getEmisor() != null ? m.getEmisor().getNombre() : "null";
+            String receptor = m.getReceptor() != null ? m.getReceptor().getNombre() : "null";
+            LOGGER.info("📨 Mensaje de " + emisor + " a " + receptor + ": \"" + m.getTexto() + "\" [ID=" + m.getCodigo() + "]");
+        }
+
         return mensajes;
     }
+
 
     @Override
     public void borrarMensaje(Mensaje mensaje) {
@@ -135,6 +162,9 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
         } catch (Exception ex) {
             LOGGER.severe("Error al borrar mensaje ID " + mensaje.getCodigo() + ": " + ex.getMessage());
         }
+        
+        if (PoolDAO.getInstancia().contiene(mensaje.getCodigo()))
+			PoolDAO.getInstancia().removeObjeto(mensaje.getCodigo());
     }
 
     @Override

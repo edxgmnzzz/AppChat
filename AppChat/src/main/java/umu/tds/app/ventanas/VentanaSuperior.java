@@ -57,7 +57,7 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
             if (yaExiste) {
                 contacto = controlador.obtenerContactoPorUsuario(destino); // implementa esto si no lo tienes
             } else {
-                contacto = new ContactoIndividual(destino.getNombre(), controlador.generarCodigoContacto(), destino.getTelefono(), destino);
+                contacto = new ContactoIndividual(destino.getNombre(), destino.getTelefono(), destino);
             }
 
             controlador.setContactoActual(contacto);

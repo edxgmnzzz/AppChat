@@ -67,5 +67,6 @@ public abstract class Contacto {
     public ImageIcon getFoto() {
         return new ImageIcon();
     }
+
     
 }

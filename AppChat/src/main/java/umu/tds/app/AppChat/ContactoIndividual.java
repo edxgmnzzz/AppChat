@@ -9,8 +9,8 @@ public class ContactoIndividual extends Contacto {
     private String telefono;
     private Usuario usuario;
 
-    public ContactoIndividual(String nombre, int codigo, String telefono, Usuario usuario) {
-        super(nombre, codigo);
+    public ContactoIndividual(String nombre,String telefono, Usuario usuario) {
+        super(nombre);
         this.telefono = telefono;
         this.usuario = usuario;
     }
@@ -18,9 +18,7 @@ public class ContactoIndividual extends Contacto {
     public String getTelefono() {
         return telefono;
     }
-    public void setCodigo(int codigo) {
-    	this.codigo = codigo;
-    }
+
     public Usuario getUsuario() {
         return usuario;
     }

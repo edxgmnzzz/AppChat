@@ -6,6 +6,7 @@ import java.awt.event.*;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Theme;
+import umu.tds.app.AppChat.Usuario;
 
 public class VentanaNuevoContacto extends JDialog {
     private static final long serialVersionUID = 1L;
@@ -147,18 +148,28 @@ public class VentanaNuevoContacto extends JDialog {
     private void agregarContacto() {
         String nombre = nombreField.getText().trim();
         String telefono = telefonoField.getText().trim();
+
         if (nombre.isEmpty() || !telefono.matches("\\d{9,15}")) {
             JOptionPane.showMessageDialog(this, "Nombre o teléfono inválido", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // CAMBIAR
-        ContactoIndividual contacto = new ContactoIndividual(nombre, 0 , telefono,  null);
+        Usuario usuarioReceptor = controlador.buscarUsuarioPorTelefono(telefono);
+        if (usuarioReceptor == null) {
+            JOptionPane.showMessageDialog(this,
+                "El número introducido no pertenece a ningún usuario registrado.",
+                "Usuario no encontrado",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        ContactoIndividual contacto = new ContactoIndividual(nombre, telefono, usuarioReceptor);
         if (controlador.agregarContacto(contacto)) {
-            JOptionPane.showMessageDialog(this, "Contacto agregado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Contacto agregado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } else {
             JOptionPane.showMessageDialog(this, "El contacto ya existe", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 }

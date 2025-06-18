@@ -108,11 +108,14 @@ public class Usuario {
      * @return true si el contacto fue añadido, false en caso contrario.
      */
     public boolean addContacto(Contacto contacto) {
-        if (!this.contactos.contains(contacto)) {
-            return this.contactos.add(contacto);
+        if (contacto == null || this.contactos.contains(contacto)) {
+            return false;
         }
-        return false;
+        this.contactos.add(contacto);
+        this.contactosID.add(contacto.getCodigo()); // 🔥 esto es CLAVE para la persistencia
+        return true;
     }
+
 
     /**
      * Elimina un contacto de la lista personal del usuario.
