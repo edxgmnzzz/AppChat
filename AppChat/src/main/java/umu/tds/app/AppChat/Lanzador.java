@@ -11,15 +11,16 @@ public class Lanzador {
          try {
              // BORRA LA BASE DE DATOS ANTES DE EJECUTAR
              Controlador controlador = Controlador.getInstancia(); // La simulación se ejecuta aquí dentro si es necesario
-
+        	 //Controlador.getInstancia();
              // Iniciar sesión como Laporta para ver el mensaje recibido
-             boolean loginExitoso = controlador.iniciarSesion("600333444", "pass2");
+             /*boolean loginExitoso = controlador.iniciarSesion("600333444", "pass2");
              
              if (loginExitoso) {
                  new VentanaPrincipal().setVisible(true);
              } else {
                  System.err.println("Login de prueba fallido.");
-             }
+             }*/
+             new VentanaLogin().setVisible(true);  
          } catch (Exception e) {
              e.printStackTrace();
          }

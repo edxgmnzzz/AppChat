@@ -167,7 +167,9 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                 chatPanel.add(vacio);
             } else {
                 // 2. Iteramos sobre cada objeto Mensaje
+            	System.out.println("Cantidad de mensajes: " + mensajes.size());
                 for (Mensaje msg : mensajes) {
+                	System.out.println("Mensaje de " + msg.getEmisor() + " a " + msg.getReceptor() + " diciendo: " + msg.getTexto());
                     // 3. Determinamos si el mensaje fue enviado por el usuario actual
                     boolean enviadoPorMi = msg.getEmisor().getTelefono().equals(controlador.getUsuarioActual().getTelefono());
                     
@@ -220,14 +222,26 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (isSending) return;
+
             if (contactoActual != null && !messageInput.getText().trim().isEmpty()) {
                 isSending = true;
                 messageInput.setEnabled(false);
                 String mensaje = messageInput.getText().trim();
                 LOGGER.info("Enviando mensaje a " + contactoActual.getNombre() + ": " + mensaje);
+
                 SwingUtilities.invokeLater(() -> {
                     try {
-                        controlador.enviarMensaje(contactoActual, mensaje);
+                        if (contactoActual instanceof Grupo grupo) {
+                            controlador.enviarMensajeAGrupo(grupo, mensaje);
+                        } else if (contactoActual instanceof ContactoIndividual contactoIndividual) {
+                            controlador.enviarMensaje(contactoIndividual, mensaje);
+                        } else {
+                            LOGGER.warning("Tipo de contacto no soportado: " + contactoActual.getClass().getSimpleName());
+                            JOptionPane.showMessageDialog(VentanaChatActual.this,
+                                    "Tipo de contacto no soportado", "Error", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+
                         messageInput.setText("");
                     } finally {
                         isSending = false;
@@ -236,10 +250,13 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                     }
                 });
             } else {
-                JOptionPane.showMessageDialog(VentanaChatActual.this, "Por favor, seleccione un contacto y escriba un mensaje", "Error", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(VentanaChatActual.this,
+                        "Por favor, seleccione un contacto y escriba un mensaje", "Error", JOptionPane.WARNING_MESSAGE);
             }
+            //updateChat();
         }
     }
+
 
     private void agregarContactoDesconocido() {
         if (!(contactoActual instanceof ContactoIndividual actual)) return;
@@ -248,7 +265,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
 
         String nombre = JOptionPane.showInputDialog(this, "Nombre para el nuevo contacto:", "Añadir Contacto", JOptionPane.PLAIN_MESSAGE);
         if (nombre != null && !nombre.trim().isEmpty()) {
-            ContactoIndividual nuevo = new ContactoIndividual(nombre.trim(), controlador.generarCodigoContacto(), usuarioDesconocido.getTelefono(), usuarioDesconocido);
+            ContactoIndividual nuevo = new ContactoIndividual(nombre.trim(), usuarioDesconocido.getTelefono(), usuarioDesconocido);
             if (controlador.agregarContacto(nuevo)) {
                 JOptionPane.showMessageDialog(this, "Contacto añadido correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 btnAgregarContacto.setVisible(false);

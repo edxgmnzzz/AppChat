@@ -10,4 +10,5 @@ public interface UsuarioDAO {
 	public void modificarUsuario(Usuario usuario);
 	public Usuario recuperarUsuario(int codigo);
 	public List<Usuario> recuperarTodosUsuarios();
+	public Usuario recuperarUsuarioPorTelefono(String telefono);
 }

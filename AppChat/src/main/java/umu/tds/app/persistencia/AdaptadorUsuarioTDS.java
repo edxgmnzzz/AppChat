@@ -175,4 +175,17 @@ public void modificarUsuario(Usuario usuario) {
             sp.borrarEntidad(e);
         }
     }
+    
+    public Usuario recuperarUsuarioPorTelefono(String telefono) {
+        List<Entidad> entidades = sp.recuperarEntidades(ENTIDAD_USUARIO);
+        for (Entidad e : entidades) {
+            String tel = sp.recuperarPropiedadEntidad(e, "telefono");
+            if (telefono.equals(tel)) {
+                return recuperarUsuario(e.getId());
+            }
+        }
+        LOGGER.warning("[recuperarUsuarioPorTelefono] No se encontró usuario con teléfono: " + telefono);
+        return null;
+    }
+
 }
