@@ -1,8 +1,12 @@
 package umu.tds.app.ventanas;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import umu.tds.app.AppChat.Contacto;
@@ -13,6 +17,7 @@ import umu.tds.app.AppChat.Theme;
 public class VentanaNuevoGrupo extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField groupNameField;
+    private JTextField imageUrlField;
     private JList<String> availableContactsList;
     private JList<String> selectedMembersList;
     private Controlador controlador;
@@ -142,12 +147,29 @@ public class VentanaNuevoGrupo extends JDialog {
         bottomPanel.setBackground(Theme.COLOR_FONDO);
         JButton createButton = createStyledButton("Crear Grupo", e -> crearGrupo());
         JButton cancelButton = createStyledButton("Cancelar", e -> dispose());
+        
+        // Group Image URL Input
+        //JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        //imagePanel.setBackground(Theme.COLOR_FONDO);
+        JLabel imageLabel = new JLabel("URL de la Imagen:");
+        imageLabel.setFont(Theme.FONT_BOLD_MEDIUM);
+        imageLabel.setForeground(Theme.COLOR_SECUNDARIO);
+        imageUrlField = new JTextField(15);
+        imageUrlField.setFont(Theme.FONT_PLAIN_MEDIUM);
+        imageUrlField.setForeground(Theme.COLOR_PRINCIPAL);
+        imageUrlField.setBackground(Theme.COLOR_SECUNDARIO);
+        imageUrlField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
+        //imagePanel.add(imageLabel);
+        //imagePanel.add(imageUrlField);
+        bottomPanel.add(imageLabel);
+        bottomPanel.add(imageUrlField);
         bottomPanel.add(createButton);
         bottomPanel.add(cancelButton);
 
         mainPanel.add(namePanel, BorderLayout.NORTH);
         mainPanel.add(selectionPanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        //mainPanel.add(imagePanel, BorderLayout.SOUTH);
 
         return mainPanel;
     }
@@ -201,21 +223,26 @@ public class VentanaNuevoGrupo extends JDialog {
 
     private void crearGrupo() {
         String groupName = groupNameField.getText().trim();
+        String urlFoto = imageUrlField.getText().trim(); // <-- NUEVO
+
         if (groupName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor, introduce un nombre para el grupo.", 
+            JOptionPane.showMessageDialog(this, "Por favor, introduce un nombre para el grupo.",
                 "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         if (controlador.existeContacto(groupName)) {
-            JOptionPane.showMessageDialog(this, "El nombre del grupo ya existe.", 
+            JOptionPane.showMessageDialog(this, "El nombre del grupo ya existe.",
                 "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         if (selectedModel.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Seleccione al menos un miembro.", 
+            JOptionPane.showMessageDialog(this, "Seleccione al menos un miembro.",
                 "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         List<ContactoIndividual> miembros = new ArrayList<>();
         List<Contacto> contactos = controlador.obtenerContactos();
         for (int i = 0; i < selectedModel.size(); i++) {
@@ -227,9 +254,26 @@ public class VentanaNuevoGrupo extends JDialog {
                 }
             }
         }
-        controlador.crearGrupo(groupName, miembros);
-        JOptionPane.showMessageDialog(this, "Grupo '" + groupName + "' creado con éxito.", 
+
+        ImageIcon icono = null;
+
+        if (!urlFoto.isBlank()) {
+            try {
+                //icono = new ImageIcon(ImageIO.read(new URI(urlFoto)));
+                BufferedImage image = ImageIO.read(new URI(urlFoto).toURL()); // Carga la imagen remota correctamente
+                icono = new ImageIcon(image);
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                    "No se pudo cargar la imagen desde la URL proporcionada.\nSe creará el grupo sin imagen.",
+                    "Advertencia", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+
+        controlador.crearGrupo(groupName, miembros, icono, urlFoto);
+        JOptionPane.showMessageDialog(this, "Grupo '" + groupName + "' creado con éxito.",
             "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }
+
 }

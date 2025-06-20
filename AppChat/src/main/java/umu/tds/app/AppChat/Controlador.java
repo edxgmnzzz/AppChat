@@ -98,7 +98,7 @@ public class Controlador {
         LOGGER.info("--- BASE DE DATOS VACÍA: REALIZANDO SIMULACIÓN INICIAL ---");
         try {
             String path = "https://widget-assets.geckochat.io/69d33e2bd0ca2799b2c6a3a3870537a9.png";
-            BufferedImage image = ImageIO.read(new URI(path).toURL());
+            BufferedImage image = ImageIO.read(new URI(path.trim()).toURL());
             ImageIcon foto = new ImageIcon(image);
             Usuario florentino = new Usuario("600111222", "Florentino Pérez", "pass1", "f@p.com", "Hala Madrid", foto, false);
             florentino.setUrlFoto(path); // ← importante para persistencia
@@ -169,10 +169,20 @@ public class Controlador {
 
     private Map<Integer, Contacto> cargarContactosYGrupos() {
         Map<Integer, Contacto> mapaContactos = new HashMap<>();
-        contactoDAO.recuperarTodosContactos().forEach(c -> mapaContactos.put(c.getCodigo(), c));
-        grupoDAO.recuperarTodosGrupos().forEach(g -> mapaContactos.put(g.getCodigo(), g));
+
+        List<ContactoIndividual> individuales = contactoDAO.recuperarTodosContactos();
+        System.out.println("[CONTROLADOR-DEBUG] 🔎 Contactos individuales cargados: " + individuales.size());
+        individuales.forEach(c -> System.out.println("  - 📞 " + c.getNombre()));
+
+        List<Grupo> grupos = grupoDAO.recuperarTodosGrupos();
+        System.out.println("[CONTROLADOR-DEBUG] 🔎 Grupos cargados: " + grupos.size());
+        grupos.forEach(g -> System.out.println("  - 👥 " + g.getNombre()));
+
+        individuales.forEach(c -> mapaContactos.put(c.getCodigo(), c));
+        grupos.forEach(g -> mapaContactos.put(g.getCodigo(), g));
         return mapaContactos;
     }
+
 
     private void vincularContactosAUsuarios(Map<Integer, Contacto> todosLosContactosDelSistema) {
         for (Usuario usuario : usuariosRegistrados.values()) {
@@ -180,9 +190,13 @@ public class Controlador {
                 .map(todosLosContactosDelSistema::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+            System.out.println("[CONTROLADOR-DEBUG] 🧩 Usuario " + usuario.getNombre() + " tiene " + listaPersonal.size() + " contactos reconstruidos");
+            listaPersonal.forEach(c -> System.out.println("   → " + c.getNombre()));
             usuario.setContactos(listaPersonal);
         }
     }
+
 
     public int contarMensajesDelUsuario(Usuario usuario) {
     	return (int) obtenerContactos().stream().flatMap(c -> c.getMensajes().stream())
@@ -450,9 +464,10 @@ public class Controlador {
         return true;
     }
     
-    public void crearGrupo(String nombre, List<ContactoIndividual> miembros) {
+    public void crearGrupo(String nombre, List<ContactoIndividual> miembros, ImageIcon foto, String urlFoto) {
         if (usuarioActual == null || nombre.isBlank() || miembros.isEmpty() || existeContacto(nombre)) return;
-        Grupo grupo = new Grupo(nombre, miembros, usuarioActual);
+        Grupo grupo = new Grupo(nombre, miembros, usuarioActual, foto);
+        grupo.setUrlFoto(urlFoto); 
         grupoDAO.registrarGrupo(grupo);
         usuarioActual.addContacto(grupo);
         usuarioDAO.modificarUsuario(usuarioActual);
@@ -471,6 +486,10 @@ public class Controlador {
 			}
 			notifyObserversChatsRecientes();
 		}
+    }
+    
+    public void modificarGrupo(Grupo grupo) {
+        grupoDAO.modificarGrupo(grupo);
     }
 
     // ########################################################################

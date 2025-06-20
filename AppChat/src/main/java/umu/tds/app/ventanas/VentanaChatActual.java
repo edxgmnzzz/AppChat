@@ -56,6 +56,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         contactImage = new JLabel();
         contactImage.setPreferredSize(new Dimension(40, 40)); // Tamaño pequeño
         contactImage.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
+        setupContactImageClickListener();
         topPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
         topPanel.add(contactImage, BorderLayout.WEST);
         
@@ -142,8 +143,8 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         if (contactoActual == null) {
             contactLabel.setText("Seleccione un chat");
             btnAgregarContacto.setVisible(false);
-            contactImage.setIcon(null); // Limpiar foto si no hay contacto
-            contactImage.setBorder(null);
+            //contactImage.setIcon(null); // Limpiar foto si no hay contacto
+            //contactImage.setBorder(null);
             //contactImage.setBorder(BorderFactory.createLineBorder(Theme.COLOR_HEADER, 0));
             
         } else {
@@ -159,26 +160,72 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                 } else {
                     contactImage.setIcon(null); // o una imagen por defecto
                 }
-            } else {
-                // Es un grupo
-                contactLabel.setText(contactoActual.getNombre());
+            } else if (contactoActual instanceof Grupo grupo) {
+                contactLabel.setText(grupo.getNombre());
                 btnAgregarContacto.setVisible(false);
-                
-				try {
-					String path = "https://widget-assets.geckochat.io/69d33e2bd0ca2799b2c6a3a3870537a9.png";
-	                BufferedImage image = ImageIO.read(new URI(path).toURL());
-	                ImageIcon foto = new ImageIcon(image);
-	                contactImage.setIcon(getScaledIcon(foto, DISPLAY_IMAGE_SIZE));
-				} catch (IOException | URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-                
-                 // o imagen de grupo si se implementa
+                System.out.println("[DEBUG] Grupo actual: " + grupo.getNombre() + ", URL foto: " + grupo.getUrlFoto());
+                String urlFoto = grupo.getUrlFoto();
+                if (urlFoto != null && !urlFoto.isBlank()) {
+                    try {
+                    	BufferedImage image = ImageIO.read(new URI(urlFoto.trim()).toURL());
+                        ImageIcon icon = new ImageIcon(image);
+                        contactImage.setIcon(getScaledIcon(icon, DISPLAY_IMAGE_SIZE));
+                    } catch (IOException | URISyntaxException e) {
+                        e.printStackTrace();
+                        contactImage.setIcon(null);
+                        contactImage.setBorder(null);
+                    }
+                }
             }
         }
     }
     
+    private void setupContactImageClickListener() {
+        contactImage.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        contactImage.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (contactoActual instanceof Grupo grupo) {
+                    String nuevaUrl = JOptionPane.showInputDialog(
+                            VentanaChatActual.this,
+                            "Introduce la nueva URL de imagen para el grupo:",
+                            grupo.getUrlFoto() != null ? grupo.getUrlFoto() : ""
+                    );
+
+                    if (nuevaUrl != null && !nuevaUrl.isBlank()) {
+                        try {
+                        	BufferedImage image = ImageIO.read(new URI(nuevaUrl.trim()).toURL());
+                            ImageIcon nuevaIcon = new ImageIcon(image);
+
+                            // Actualiza visualmente
+                            contactImage.setIcon(getScaledIcon(nuevaIcon, DISPLAY_IMAGE_SIZE));
+
+                            // Actualiza en el modelo
+                            grupo.setUrlFoto(nuevaUrl);
+                            grupo.setFoto(nuevaIcon);
+                            controlador.modificarGrupo(grupo); // ✅ debes tener este método en el controlador
+
+                            JOptionPane.showMessageDialog(
+                                    VentanaChatActual.this,
+                                    "Imagen del grupo actualizada correctamente.",
+                                    "Éxito",
+                                    JOptionPane.INFORMATION_MESSAGE
+                            );
+
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(
+                                    VentanaChatActual.this,
+                                    "No se pudo cargar la imagen desde la URL proporcionada.",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+    }
 
 
     /**
