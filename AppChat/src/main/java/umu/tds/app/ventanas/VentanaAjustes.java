@@ -92,7 +92,7 @@ public class VentanaAjustes extends JDialog {
         gbc.gridy = 1;
         panelContenido.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1;
-        emailField = new JTextField(controlador.getEmailUserActual(), 20);
+        emailField = new JTextField(controlador.getUsuarioActual().getEmail(), 20);
         emailField.setEditable(false);
         panelContenido.add(emailField, gbc);
 
@@ -100,7 +100,7 @@ public class VentanaAjustes extends JDialog {
         gbc.gridy = 2;
         panelContenido.add(new JLabel("Teléfono:"), gbc);
         gbc.gridx = 1;
-        telefonoField = new JTextField(String.valueOf(controlador.getNumTelefonoUserActual()), 20);
+        telefonoField = new JTextField(String.valueOf(controlador.getUsuarioActual().getTelefono()), 20);
         telefonoField.setEditable(false);
         panelContenido.add(telefonoField, gbc);
 

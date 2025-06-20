@@ -31,7 +31,7 @@ public class PoolDAO {
 	public Object getObjeto(int id) {
 		Object obj = pool.get(id);
 		if (obj != null) {
-			LOGGER.fine("[PoolDAO] Objeto recuperado del pool con ID " + id + ": " + obj.getClass().getSimpleName());
+			//LOGGER.fine("[PoolDAO] Objeto recuperado del pool con ID " + id + ": " + obj.getClass().getSimpleName());
 		} else {
 			LOGGER.warning("[PoolDAO] Objeto NO encontrado en el pool con ID " + id);
 		}
@@ -46,15 +46,15 @@ public class PoolDAO {
 		// Si el objeto ya existe, se reemplaza. Hashtable.put() hace esto.
 		Object oldObj = pool.put(id, objeto);
 		if (oldObj != null) {
-			LOGGER.info("[PoolDAO] Objeto REEMPLAZADO en el pool con ID " + id + ". Nuevo: " + objeto.getClass().getSimpleName());
+			//LOGGER.info("[PoolDAO] Objeto REEMPLAZADO en el pool con ID " + id + ". Nuevo: " + objeto.getClass().getSimpleName());
 		} else {
-			LOGGER.info("[PoolDAO] Objeto AÑADIDO al pool con ID " + id + ": " + objeto.getClass().getSimpleName());
+			//LOGGER.info("[PoolDAO] Objeto AÑADIDO al pool con ID " + id + ": " + objeto.getClass().getSimpleName());
 		}
 
 		// Para depuración, imprimir detalles si es una Entidad
 		if (objeto instanceof beans.Entidad) {
 			beans.Entidad entidad = (beans.Entidad) objeto;
-			LOGGER.fine("[PoolDAO] Detalles de la Entidad (ID " + id + ", Nombre=" + entidad.getNombre() + ") en el pool:");
+			//LOGGER.fine("[PoolDAO] Detalles de la Entidad (ID " + id + ", Nombre=" + entidad.getNombre() + ") en el pool:");
 			for (beans.Propiedad p : entidad.getPropiedades()) {
 				LOGGER.fine("    Propiedad: " + p.getNombre() + " = '" + p.getValor() + "'");
 			}
@@ -63,14 +63,14 @@ public class PoolDAO {
 
 	public boolean contiene(int id) {
 		boolean contiene = pool.containsKey(id);
-		LOGGER.fine("[PoolDAO] Pool contiene ID " + id + ": " + contiene);
+		//LOGGER.fine("[PoolDAO] Pool contiene ID " + id + ": " + contiene);
 		return contiene;
 	}
 
 	public void removeObjeto(int id) {
 		Object obj = pool.remove(id);
 		if (obj != null) {
-			LOGGER.info("[PoolDAO] Objeto eliminado del pool con ID " + id + ": " + obj.getClass().getSimpleName());
+			//LOGGER.info("[PoolDAO] Objeto eliminado del pool con ID " + id + ": " + obj.getClass().getSimpleName());
 		} else {
 			LOGGER.warning("[PoolDAO] Intento de eliminar objeto no existente del pool con ID " + id);
 		}
@@ -80,7 +80,7 @@ public class PoolDAO {
 	public void imprimirContenidoPool(String callerContext) {
 		LOGGER.info("----- [PoolDAO] Contenido Actual del PoolDAO (llamado desde: " + callerContext + ") -----");
 		if (pool.isEmpty()) {
-			LOGGER.info("[PoolDAO] El pool está vacío.");
+			//LOGGER.info("[PoolDAO] El pool está vacío.");
 			return;
 		}
 		for (Map.Entry<Integer, Object> entry : pool.entrySet()) {
@@ -88,21 +88,21 @@ public class PoolDAO {
 			Object obj = entry.getValue();
 			if (obj instanceof beans.Entidad) {
 				beans.Entidad entidad = (beans.Entidad) obj;
-				LOGGER.info("[PoolDAO] ID: " + id + " -> Entidad: " + entidad.getNombre());
+				//LOGGER.info("[PoolDAO] ID: " + id + " -> Entidad: " + entidad.getNombre());
 				for (beans.Propiedad p : entidad.getPropiedades()) {
-					LOGGER.info("    " + p.getNombre() + ": '" + p.getValor() + "'");
+					//LOGGER.info("    " + p.getNombre() + ": '" + p.getValor() + "'");
 				}
 			} else if (obj != null) {
-				LOGGER.info("[PoolDAO] ID: " + id + " -> Objeto: " + obj.getClass().getSimpleName());
+				//LOGGER.info("[PoolDAO] ID: " + id + " -> Objeto: " + obj.getClass().getSimpleName());
 			} else {
-				LOGGER.info("[PoolDAO] ID: " + id + " -> Objeto: null");
+				//LOGGER.info("[PoolDAO] ID: " + id + " -> Objeto: null");
 			}
 		}
-		LOGGER.info("----- [PoolDAO] Fin del Contenido del PoolDAO -----");
+		//LOGGER.info("----- [PoolDAO] Fin del Contenido del PoolDAO -----");
 	}
 
 	public void limpiarPool() {
 		pool.clear();
-		LOGGER.info("[PoolDAO] PoolDAO ha sido limpiado.");
+		//LOGGER.info("[PoolDAO] PoolDAO ha sido limpiado.");
 	}
 }

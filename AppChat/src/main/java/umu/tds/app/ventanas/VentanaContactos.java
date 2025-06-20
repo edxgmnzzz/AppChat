@@ -19,6 +19,14 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         controlador.addObserverContactos(this);
         configurarVentana();
         crearComponentes();
+        
+        // Buena práctica: desregistrar el observer cuando la ventana se cierra
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                controlador.removeObserverContactos(VentanaContactos.this);
+            }
+        });
     }
 
 
@@ -147,25 +155,41 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         VentanaNuevoContacto ventanaNuevoContacto = new VentanaNuevoContacto(this);
         ventanaNuevoContacto.setVisible(true);
     }
+    
     private void eliminarContacto() {
         String seleccionado = contactosList.getSelectedValue();
         if (seleccionado == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un contacto", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un contacto para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        String nombre = seleccionado.startsWith("Individual: ") ? seleccionado.substring(12) : seleccionado.substring(7);
-        Contacto contacto = controlador.obtenerContactoPorNombre(nombre);
-        if (contacto instanceof ContactoIndividual) {
-            controlador.eliminarContacto((ContactoIndividual) contacto);
-            JOptionPane.showMessageDialog(this, "Contacto eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Solo se pueden eliminar contactos individuales", "Error", JOptionPane.ERROR_MESSAGE);
+        
+        // Extraer el nombre real sin los prefijos "Individual: " o "Grupo: "
+        String nombre = seleccionado.substring(seleccionado.indexOf(":") + 2);
+        
+        int confirmacion = JOptionPane.showConfirmDialog(
+            this,
+            "¿Estás seguro de que quieres eliminar a '" + nombre + "'?",
+            "Confirmar Eliminación",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            Contacto contacto = controlador.obtenerContactoPorNombre(nombre);
+            if (contacto instanceof ContactoIndividual) {
+                controlador.eliminarContacto((ContactoIndividual) contacto);
+            } else {
+                // Aquí iría la lógica para eliminar grupos
+                JOptionPane.showMessageDialog(this, "La eliminación de grupos no está implementada.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
+            }
         }
     }
 
     private void actualizarListaContactos() {
         DefaultListModel<String> model = new DefaultListModel<>();
-        for (Contacto contacto : controlador.obtenerContactos()) {
+        // --- CAMBIO CLAVE ---
+        // Se llama al método del controlador que ya filtra los contactos desconocidos.
+        for (Contacto contacto : controlador.obtenerContactosConocidos()) { 
             String prefixedName = (contacto instanceof ContactoIndividual) 
                 ? "Individual: " + contacto.getNombre() 
                 : "Grupo: " + contacto.getNombre();
@@ -176,6 +200,7 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
 
     @Override
     public void updateListaContactos() {
+        // Asegurarse de que la actualización de la UI se ejecute en el Event Dispatch Thread
         SwingUtilities.invokeLater(this::actualizarListaContactos);
     }
 }

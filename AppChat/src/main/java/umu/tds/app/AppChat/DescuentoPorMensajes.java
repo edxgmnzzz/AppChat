@@ -10,7 +10,7 @@ public class DescuentoPorMensajes implements Descuento {
 
     @Override
     public double getDescuento(double precioInicial) {
-        if (totalMensajes >= 100) { // Ejemplo: si envió más de 100 mensajes
+        if (totalMensajes >= 3) {
             return precioInicial * (1 - porcentaje);
         }
         return precioInicial;

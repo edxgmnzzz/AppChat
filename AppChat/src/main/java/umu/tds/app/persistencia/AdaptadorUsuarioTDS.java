@@ -1,9 +1,14 @@
 package umu.tds.app.persistencia;
 
+import java.awt.image.BufferedImage;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import beans.Entidad;
 import beans.Propiedad;
@@ -81,7 +86,11 @@ public class AdaptadorUsuarioTDS implements UsuarioDAO {
         propiedades.add(new Propiedad("email", usuario.getEmail()));
         propiedades.add(new Propiedad("saludo", usuario.getSaludo()));
         propiedades.add(new Propiedad("premium", String.valueOf(usuario.isPremium())));
-        propiedades.add(new Propiedad("urlFoto", usuario.getUrlFoto() != null ? usuario.getUrlFoto() : ""));
+        String urlParaGuardar = usuario.getUrlFoto() != null ? usuario.getUrlFoto() : "";
+        // LOG 2: Verificamos qué URL se está a punto de guardar en la BD
+        LOGGER.info("[FOTO-DEBUG] REGISTRANDO usuario " + usuario.getNombre() + " con urlFoto: '" + urlParaGuardar + "'");
+        propiedades.add(new Propiedad("urlFoto", urlParaGuardar));
+        //propiedades.add(new Propiedad("urlFoto", usuario.getUrlFoto() != null ? usuario.getUrlFoto() : ""));
         // Aquí usamos getContactosInternal para acceder a la lista mutable.
         propiedades.add(new Propiedad("contactos", codigosContactos(usuario.getContactosInternal())));
 
@@ -136,25 +145,31 @@ public void modificarUsuario(Usuario usuario) {
         String saludo = sp.recuperarPropiedadEntidad(e, "saludo");
         boolean premium = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "premium"));
         String urlFoto = sp.recuperarPropiedadEntidad(e, "urlFoto");
-        
-        // --- ESTA ES LA PARTE IMPORTANTE ---
-        // 1. Recuperamos la cadena de IDs de contactos desde la persistencia.
+        LOGGER.info("[FOTO-DEBUG] RECUPERANDO usuario con ID " + codigo + ". URL leída de BD: '" + urlFoto + "'");
+
         String contactosStr = sp.recuperarPropiedadEntidad(e, "contactos");
-        
-        // 2. La convertimos en una lista de Integers.
         List<Integer> contactosID = idsContactosDesdeString(contactosStr);
 
-        // 3. Creamos el objeto Usuario.
-        Usuario u = new Usuario(telefono, nombre, password, email, saludo, new ImageIcon(), premium);
+        ImageIcon icono = new ImageIcon(); // por defecto
+
+        if (urlFoto != null && !urlFoto.isBlank()) {
+            try {
+            	BufferedImage img = ImageIO.read(new URI(urlFoto).toURL());
+                icono = new ImageIcon(img);
+                LOGGER.info("[FOTO-DEBUG] Imagen cargada correctamente desde URL: " + urlFoto);
+            } catch (Exception ex) {
+                LOGGER.warning("[FOTO-DEBUG] Error al cargar imagen desde URL: " + urlFoto + " -> " + ex.getMessage());
+            }
+        }
+
+        Usuario u = new Usuario(telefono, nombre, password, email, saludo, icono, premium);
         u.setId(codigo);
         u.setUrlFoto(urlFoto);
-
-        // 4. ¡PASO CLAVE QUE FALTABA! Asignamos la lista de IDs al objeto Usuario.
         u.setContactosID(contactosID);
 
-        ////LOGGER.Info("[recuperarUsuario] Usuario ID: " + codigo + " recuperado. Tiene " + u.getContactosID().size() + " contactos asociados.");
         return u;
     }
+
     
     @Override
     public List<Usuario> recuperarTodosUsuarios() {

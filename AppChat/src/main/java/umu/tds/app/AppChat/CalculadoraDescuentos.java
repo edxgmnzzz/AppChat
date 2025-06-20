@@ -1,5 +1,7 @@
 package umu.tds.app.AppChat;
 
+import java.time.LocalDate;
+
 public class CalculadoraDescuentos {
 
     private Usuario usuario;
@@ -16,10 +18,10 @@ public class CalculadoraDescuentos {
         resumen.append("Precio base: ").append(precioInicial).append("€\n");
 
         // Descuento por antigüedad
-        DescuentoAntiguedad descAntiguedad = new DescuentoAntiguedad(usuario, 0.20);
+        DescuentoPorIntervaloRegistro descAntiguedad = new DescuentoPorIntervaloRegistro(usuario, 0.20, LocalDate.of(2024, 12, 1), LocalDate.of(2025, 12, 31));
         double nuevoPrecio = descAntiguedad.getDescuento(precio);
         if (nuevoPrecio != precio) {
-            resumen.append("- Descuento antigüedad (20%): -").append(precio - nuevoPrecio).append("€\n");
+            resumen.append("- Descuento por fecha (20%): -").append(precio - nuevoPrecio).append("€\n");
             precio = nuevoPrecio;
         }
 

@@ -10,8 +10,8 @@ public class Grupo extends Contacto {
     private List<ContactoIndividual> integrantes;
     private Usuario admin;
 
-    public Grupo(String nombre, int codigo, List<ContactoIndividual> contactos, Usuario admin) {
-        super(nombre, codigo);
+    public Grupo(String nombre, List<ContactoIndividual> contactos, Usuario admin) {
+        super(nombre);
         this.integrantes = new ArrayList<>(contactos);
         this.admin = admin;
     }
@@ -45,7 +45,6 @@ public class Grupo extends Contacto {
         this.integrantes = new ArrayList<>(contactos);
     }
 
-    @Override
     public List<Mensaje> getMensajesRecibidos(Optional<Usuario> usuario) {
         List<Mensaje> recibidos = new ArrayList<>();
         for (Mensaje msg : mensajes) {
@@ -63,10 +62,6 @@ public class Grupo extends Contacto {
         return copia;
     }
 
-    public boolean hasParticipante(Usuario usuario) {
-        return integrantes.stream()
-                .anyMatch(i -> i.getUsuario().equals(usuario));
-    }
 
     @Override
     public int hashCode() {

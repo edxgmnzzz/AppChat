@@ -1,64 +1,58 @@
 package umu.tds.app.AppChat;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import javax.swing.ImageIcon;
 
 public class ContactoIndividual extends Contacto {
     private String telefono;
-    private Usuario usuario;
+    private boolean esDesconocido; // Flag para saber si fue creado automáticamente
 
-    public ContactoIndividual(String nombre,String telefono, Usuario usuario) {
+    /**
+     * Constructor para contactos creados explícitamente por el usuario.
+     * @param nombre El alias que el usuario le da al contacto.
+     * @param telefono El número de teléfono del contacto.
+     */
+    public ContactoIndividual(String nombre, String telefono) {
         super(nombre);
         this.telefono = telefono;
-        this.usuario = usuario;
+        this.esDesconocido = false; // Un contacto creado con nombre no es desconocido
+    }
+
+    /**
+     * Constructor para contactos "desconocidos", creados automáticamente al recibir un mensaje.
+     * @param telefono El número de teléfono del contacto.
+     */
+    public ContactoIndividual(String telefono) {
+        super(telefono); // Por defecto, el nombre es el propio teléfono
+        this.telefono = telefono;
+        this.esDesconocido = true;
     }
 
     public String getTelefono() {
         return telefono;
     }
 
-    public Usuario getUsuario() {
-        return usuario;
+    public boolean isDesconocido() {
+        return esDesconocido;
     }
 
+    /**
+     * "Promueve" un contacto desconocido a uno conocido, asignándole un nombre definitivo.
+     * @param nuevoNombre El nombre proporcionado por el usuario.
+     */
+    public void registrarComoConocido(String nuevoNombre) {
+        this.setNombre(nuevoNombre); // setNombre es heredado de la clase Contacto
+        this.esDesconocido = false;
+    }
+
+    // Este método debería ser manejado por la vista llamando al controlador
     @Override
     public ImageIcon getFoto() {
-        return usuario.getProfilePhotos();
+        // La vista debería obtener el usuario a través del controlador y luego su foto.
+        // Devolvemos un icono por defecto para que el modelo no dependa del controlador.
+        return new ImageIcon(); 
     }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
-
-    @Override
-    public List<Mensaje> getMensajesRecibidos(Optional<Usuario> usuario) {
-        List<Mensaje> recibidos = new ArrayList<>();
-        for (Mensaje msg : mensajes) {
-            if (msg.getReceptor() == this && (!usuario.isPresent() || msg.getEmisor() == usuario.get())) {
-                recibidos.add(msg);
-            }
-        }
-        return recibidos;
-    }
-
-    public ContactoIndividual getContacto(Usuario usuario) {
-        return this.usuario.getContactos().stream()
-                .filter(c -> c instanceof ContactoIndividual)
-                .map(c -> (ContactoIndividual) c)
-                .filter(c -> c.getUsuario().equals(usuario))
-                .findAny()
-                .orElse(null);
-    }
-
-    public List<Mensaje> removeMensajesRecibidos(Usuario usuarioActual) {
-        List<Mensaje> recibidos = getMensajesRecibidos(Optional.of(usuarioActual));
-        List<Mensaje> copia = new ArrayList<>(recibidos);
-        mensajes.removeAll(recibidos);
-        return copia;
-    }
-
+    
+    // hashCode y equals se basan en el teléfono, que es el identificador único del otro usuario.
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -69,22 +63,13 @@ public class ContactoIndividual extends Contacto {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
         ContactoIndividual other = (ContactoIndividual) obj;
         if (telefono == null) {
-            if (other.telefono != null)
-                return false;
-        } else if (!telefono.equals(other.telefono))
-            return false;
+            if (other.telefono != null) return false;
+        } else if (!telefono.equals(other.telefono)) return false;
         return true;
-    }
-
-    public boolean isUsuario(Usuario otherUsuario) {
-        return usuario.equals(otherUsuario);
     }
 }
