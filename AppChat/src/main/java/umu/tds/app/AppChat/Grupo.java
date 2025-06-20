@@ -9,11 +9,14 @@ public class Grupo extends Contacto {
     public static final String GROUP_ICON_PATH = "/umu/tds/app/recursos/grupo.png";
     private List<ContactoIndividual> integrantes;
     private Usuario admin;
+    private ImageIcon foto;
+    private String urlFoto;
 
-    public Grupo(String nombre, List<ContactoIndividual> contactos, Usuario admin) {
+    public Grupo(String nombre, List<ContactoIndividual> contactos, Usuario admin, ImageIcon foto) {
         super(nombre);
         this.integrantes = new ArrayList<>(contactos);
         this.admin = admin;
+        this.foto = foto != null ? foto : new ImageIcon();
     }
 
     public List<ContactoIndividual> getParticipantes() {
@@ -92,4 +95,25 @@ public class Grupo extends Contacto {
 		this.codigo = id;
 		
 	}
+
+	public String getUrlFoto() {
+		return urlFoto;
+	}
+
+	public void setUrlFoto(String urlFoto) {
+		this.urlFoto = urlFoto;
+	}
+
+	public List<ContactoIndividual> getIntegrantes() {
+		return integrantes;
+	}
+
+	public void setAdmin(Usuario admin) {
+		this.admin = admin;
+	}
+
+	public void setFoto(ImageIcon foto) {
+		this.foto = foto;
+	}
+	
 }
