@@ -29,11 +29,11 @@ public class AdaptadorGrupoTDS implements GrupoDAO {
 	@Override
 	public void registrarGrupo(Grupo grupo) {
 	    if (grupo == null || grupo.getCodigo() > 0) {
-	        System.out.println("⚠️ Grupo nulo o ya registrado. Cancelando.");
+	        //System.out.println("⚠️ Grupo nulo o ya registrado. Cancelando.");
 	        return;
 	    }
 
-	    System.out.println("✅ Registrando grupo: " + grupo.getNombre());
+	    //System.out.println("✅ Registrando grupo: " + grupo.getNombre());
 
 	    Entidad eGrupo = new Entidad();
 	    eGrupo.setNombre(ENTIDAD_GRUPO);
@@ -45,7 +45,7 @@ public class AdaptadorGrupoTDS implements GrupoDAO {
 
 	    eGrupo = servPersistencia.registrarEntidad(eGrupo);
 	    grupo.setCodigo(eGrupo.getId());
-	    System.out.println("✅ Grupo registrado con ID: " + grupo.getCodigo());
+	    //System.out.println("✅ Grupo registrado con ID: " + grupo.getCodigo());
 	}
 
 	@Override
@@ -68,10 +68,10 @@ public class AdaptadorGrupoTDS implements GrupoDAO {
 
 	@Override
 	public Grupo recuperarGrupo(int codigo) {
-	    System.out.println("🔁 Recuperando grupo con ID: " + codigo);
+	    //System.out.println("🔁 Recuperando grupo con ID: " + codigo);
 	    Entidad eGrupo = servPersistencia.recuperarEntidad(codigo);
 	    if (eGrupo == null) {
-	        System.out.println("❌ No se encontró entidad para ID: " + codigo);
+	        //System.out.println("❌ No se encontró entidad para ID: " + codigo);
 	        return null;
 	    }
 
@@ -79,14 +79,14 @@ public class AdaptadorGrupoTDS implements GrupoDAO {
 	    String codIntegrantes = servPersistencia.recuperarPropiedadEntidad(eGrupo, "integrantes");
 	    String codMensajes = servPersistencia.recuperarPropiedadEntidad(eGrupo, "mensajes");
 
-	    System.out.println("🔍 Nombre del grupo: " + nombre);
-	    System.out.println("👥 Códigos integrantes: " + codIntegrantes);
-	    System.out.println("💬 Códigos mensajes: " + codMensajes);
+	    //System.out.println("🔍 Nombre del grupo: " + nombre);
+	    //System.out.println("👥 Códigos integrantes: " + codIntegrantes);
+	    //System.out.println("💬 Códigos mensajes: " + codMensajes);
 
 	    List<ContactoIndividual> integrantes = obtenerContactosDesdeCodigos(codIntegrantes);
 	    List<Mensaje> mensajes = obtenerMensajesDesdeCodigos(codMensajes);
 
-	    Grupo grupo = new Grupo(nombre, codigo, integrantes, null);
+	    Grupo grupo = new Grupo(nombre, integrantes, null);
 	    mensajes.forEach(grupo::sendMensaje);
 	    return grupo;
 	}

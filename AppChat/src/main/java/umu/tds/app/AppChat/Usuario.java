@@ -99,7 +99,7 @@ public class Usuario {
      * @param contactos La nueva lista de contactos.
      */
     public void setContactos(List<Contacto> contactos) {
-        this.contactos = new ArrayList<>(contactos);
+        this.contactos = contactos;
     }
 
     /**
@@ -122,8 +122,19 @@ public class Usuario {
      * @param contacto El contacto a eliminar.
      * @return true si el contacto fue eliminado, false en caso contrario.
      */
+    /**
+     * Elimina un contacto de la lista personal del usuario, asegurando que tanto
+     * el objeto como su ID sean eliminados para mantener la consistencia.
+     * @param contacto El contacto a eliminar.
+     * @return true si el contacto fue eliminado, false en caso contrario.
+     */
     public boolean removeContacto(Contacto contacto) {
-        return this.contactos.remove(contacto);
+        boolean removed = this.contactos.remove(contacto);
+        if (removed) {
+            // Si se eliminó el objeto, también eliminamos su ID de la lista de IDs.
+            this.contactosID.remove(Integer.valueOf(contacto.getCodigo()));
+        }
+        return removed;
     }
 
     /**
@@ -154,4 +165,30 @@ public class Usuario {
         Usuario other = (Usuario) obj;
         return Objects.equals(telefono, other.telefono);
     }
+    
+    /**
+     * Añade un ID de contacto a la lista de IDs.
+     * Este método debe ser usado por el Controlador cuando se realizan operaciones
+     * que solo afectan a los IDs, como la actualización tras una modificación.
+     * @param id El ID del contacto a añadir.
+     */
+    public void addContactoID(int id) {
+        if (!this.contactosID.contains(id)) {
+            this.contactosID.add(id);
+        }
+    }
+
+    /**
+     * Elimina un ID de contacto de la lista de IDs.
+     * Es crucial para actualizar la lista de referencias del usuario cuando un contacto
+     * cambia su ID en la base de datos.
+     * @param id El ID del contacto a eliminar.
+     * @return true si el ID fue encontrado y eliminado, false en caso contrario.
+     */
+    public boolean removeContactoID(int id) {
+        // Integer.valueOf(id) es necesario para que Java no confunda el 'id'
+        // con un índice de la lista, sino con el objeto a eliminar.
+        return this.contactosID.remove(Integer.valueOf(id));
+    }
+    
 }

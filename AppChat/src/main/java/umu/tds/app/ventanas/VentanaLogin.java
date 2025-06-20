@@ -215,6 +215,7 @@ public class VentanaLogin extends JFrame {
     private void abrirVentanaPrincipal() {
         this.dispose();
         VentanaPrincipal ventanaPrincipal = new VentanaPrincipal();
+        controlador.notifyObservers();
         ventanaPrincipal.setVisible(true);
     }
 

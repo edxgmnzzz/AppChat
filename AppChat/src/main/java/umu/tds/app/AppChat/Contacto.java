@@ -62,11 +62,14 @@ public abstract class Contacto {
         return new ArrayList<>(mensajes);
     }
 
-    public abstract List<Mensaje> getMensajesRecibidos(Optional<Usuario> usuario);
 
     public ImageIcon getFoto() {
         return new ImageIcon();
     }
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
 
     
 }

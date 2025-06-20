@@ -97,8 +97,9 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
 
     @Override
     public void updateChatsRecientes(String[] chatsRecientes) {
+        //System.out.println("--- VentanaChatsRecientes: updateChatsRecientes RECIBIDO con " + chatsRecientes.length + " chats.");
         actualizarLista(chatsRecientes);
-        System.out.println("Actualizando lista de chats recientes: " + Arrays.toString(chatsRecientes));
+        //System.out.println("Actualizando lista de chats recientes: " + Arrays.toString(chatsRecientes));
     }
 
     @Override

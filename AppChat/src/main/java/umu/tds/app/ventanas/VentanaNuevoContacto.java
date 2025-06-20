@@ -145,31 +145,38 @@ public class VentanaNuevoContacto extends JDialog {
         return button;
     }
 
+ // Este método está en tu clase de la ventana (Ej: VentanaAgregarContacto.java)
+
     private void agregarContacto() {
         String nombre = nombreField.getText().trim();
         String telefono = telefonoField.getText().trim();
 
-        if (nombre.isEmpty() || !telefono.matches("\\d{9,15}")) {
-            JOptionPane.showMessageDialog(this, "Nombre o teléfono inválido", "Error", JOptionPane.ERROR_MESSAGE);
+        // 1. Validar la entrada del usuario (esto está perfecto como lo tenías)
+        if (nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "El campo 'Nombre' no puede estar vacío.", "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!telefono.matches("\\d{9,15}")) { // Asumimos un formato de 9 a 15 dígitos
+            JOptionPane.showMessageDialog(this, "El formato del teléfono es inválido. Debe contener solo números (9-15 dígitos).", "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        Usuario usuarioReceptor = controlador.buscarUsuarioPorTelefono(telefono);
-        if (usuarioReceptor == null) {
-            JOptionPane.showMessageDialog(this,
-                "El número introducido no pertenece a ningún usuario registrado.",
-                "Usuario no encontrado",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        ContactoIndividual contacto = new ContactoIndividual(nombre, telefono, usuarioReceptor);
-        if (controlador.agregarContacto(contacto)) {
-            JOptionPane.showMessageDialog(this, "Contacto agregado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this, "El contacto ya existe", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        // 2. Llamar al nuevo método del controlador, pasándole SOLO los datos primitivos.
+        //    El controlador se encargará de todas las comprobaciones internas.
+        //    Ya no creamos el objeto ContactoIndividual aquí.
+        boolean exito = controlador.agregarContacto(nombre, telefono);
+        
+        // 3. Gestionar la respuesta del controlador.
+        //    El controlador ya se encarga de mostrar los mensajes de error específicos (usuario no encontrado, contacto ya existe).
+        //    Aquí solo gestionamos el caso de éxito para cerrar la ventana.
+        if (exito) {
+            JOptionPane.showMessageDialog(this, "Contacto '" + nombre + "' agregado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            dispose(); // Cierra la ventana de agregar contacto
+        } 
+        // Nota: Los mensajes de error como "Usuario no encontrado" o "Contacto ya existe" 
+        // ahora los muestra el propio controlador, lo que es una mejor práctica (centraliza la lógica).
+        // Si prefieres que la ventana los muestre, el método del controlador podría devolver un enum o un código de resultado.
+        // Pero para empezar, esta es la forma más limpia.
     }
 
 }
