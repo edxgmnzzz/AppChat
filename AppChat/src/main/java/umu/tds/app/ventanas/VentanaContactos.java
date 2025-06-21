@@ -9,18 +9,31 @@ import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverContactos;
 import umu.tds.app.AppChat.Theme;
 
+/**
+ * Ventana para visualizar, agregar o eliminar contactos conocidos,
+ * así como crear nuevos grupos. Excluye contactos desconocidos.
+ * 
+ * Implementa el patrón Observer para actualizar dinámicamente la lista de contactos.
+ */
 public class VentanaContactos extends JDialog implements ObserverContactos {
     private static final long serialVersionUID = 1L;
+
+    /** Lista visual que muestra los contactos registrados. */
     private JList<String> contactosList;
+
+    /** Controlador de la lógica de la aplicación. */
     private Controlador controlador;
 
+    /**
+     * Crea una nueva instancia de la ventana de gestión de contactos.
+     * Se registra automáticamente como observador del controlador.
+     */
     public VentanaContactos() {
         controlador = Controlador.getInstancia();
         controlador.addObserverContactos(this);
         configurarVentana();
         crearComponentes();
-        
-        // Buena práctica: desregistrar el observer cuando la ventana se cierra
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
@@ -29,7 +42,9 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         });
     }
 
-
+    /**
+     * Configura propiedades visuales y de forma de la ventana.
+     */
     private void configurarVentana() {
         setSize(400, 500);
         setLocationRelativeTo(getParent());
@@ -37,10 +52,15 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 400, 500, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
     }
 
+    /**
+     * Crea el contenido principal de la ventana (barra de título y panel central).
+     */
     private void crearComponentes() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Theme.COLOR_FONDO);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(
+            Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM
+        ));
 
         mainPanel.add(crearBarraTitulo(), BorderLayout.NORTH);
         mainPanel.add(crearPanelContenido(), BorderLayout.CENTER);
@@ -48,6 +68,10 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         add(mainPanel);
     }
 
+    /**
+     * Crea la barra superior con el título de la ventana y botón de cierre.
+     * @return el panel de la barra de título
+     */
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
@@ -71,6 +95,7 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
                 cerrarBoton.setBackground(Theme.COLOR_ACENTO);
                 cerrarBoton.setContentAreaFilled(true);
             }
+
             public void mouseExited(MouseEvent e) {
                 cerrarBoton.setContentAreaFilled(false);
             }
@@ -84,6 +109,10 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         return barraTitulo;
     }
 
+    /**
+     * Crea el panel principal con la lista de contactos y los botones de acción.
+     * @return panel con los componentes funcionales
+     */
     private JPanel crearPanelContenido() {
         JPanel panelContenido = new JPanel(new BorderLayout());
         panelContenido.setBackground(Theme.COLOR_FONDO);
@@ -92,17 +121,12 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         contactosList.setCellRenderer(new DefaultListCellRenderer() {
             private static final long serialVersionUID = 1L;
 
-			@Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                           boolean isSelected, boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (isSelected) {
-                    c.setBackground(Theme.COLOR_HOVER);
-                    c.setForeground(Theme.COLOR_TEXTO);
-                } else {
-                    c.setBackground(Theme.COLOR_SECUNDARIO);
-                    c.setForeground(Theme.COLOR_PRINCIPAL);
-                }
+                c.setBackground(isSelected ? Theme.COLOR_HOVER : Theme.COLOR_SECUNDARIO);
+                c.setForeground(isSelected ? Theme.COLOR_TEXTO : Theme.COLOR_PRINCIPAL);
                 return c;
             }
         });
@@ -110,25 +134,28 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         actualizarListaContactos();
 
         JScrollPane scrollPane = new JScrollPane(contactosList);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(
+            Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         panelContenido.add(scrollPane, BorderLayout.CENTER);
 
         JPanel botonesPanel = new JPanel(new GridLayout(1, 3, 10, 0));
         botonesPanel.setBackground(Theme.COLOR_FONDO);
 
-        JButton agregarContacto = createStyledButton("Agregar Contacto", e -> agregarContacto());
-        JButton eliminarContacto = createStyledButton("Eliminar Contacto", e -> eliminarContacto());
-        JButton crearGrupo = createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo().setVisible(true));
-
-        botonesPanel.add(agregarContacto);
-        botonesPanel.add(eliminarContacto);
-        botonesPanel.add(crearGrupo);
+        botonesPanel.add(createStyledButton("Agregar Contacto", e -> agregarContacto()));
+        botonesPanel.add(createStyledButton("Eliminar Contacto", e -> eliminarContacto()));
+        botonesPanel.add(createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo().setVisible(true)));
 
         panelContenido.add(botonesPanel, BorderLayout.SOUTH);
 
         return panelContenido;
     }
 
+    /**
+     * Crea un botón con estilo personalizado y su acción asociada.
+     * @param text texto del botón
+     * @param action acción a ejecutar al pulsar
+     * @return botón estilizado
+     */
     private JButton createStyledButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setBackground(Theme.COLOR_PRINCIPAL);
@@ -144,6 +171,7 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
             public void mouseEntered(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_HOVER);
             }
+
             public void mouseExited(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_PRINCIPAL);
             }
@@ -151,21 +179,30 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         return button;
     }
 
+    /**
+     * Abre una ventana para registrar un nuevo contacto individual.
+     */
     private void agregarContacto() {
         VentanaNuevoContacto ventanaNuevoContacto = new VentanaNuevoContacto(this);
         ventanaNuevoContacto.setVisible(true);
+
+        if (!ventanaNuevoContacto.isVisible()) {
+            dispose(); 
+        }
     }
-    
+
+    /**
+     * Elimina el contacto actualmente seleccionado, si es individual.
+     * Muestra confirmación previa. No implementado para grupos.
+     */
     private void eliminarContacto() {
         String seleccionado = contactosList.getSelectedValue();
         if (seleccionado == null) {
             JOptionPane.showMessageDialog(this, "Seleccione un contacto para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
-        // Extraer el nombre real sin los prefijos "Individual: " o "Grupo: "
+
         String nombre = seleccionado.substring(seleccionado.indexOf(":") + 2);
-        
         int confirmacion = JOptionPane.showConfirmDialog(
             this,
             "¿Estás seguro de que quieres eliminar a '" + nombre + "'?",
@@ -179,28 +216,31 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
             if (contacto instanceof ContactoIndividual) {
                 controlador.eliminarContacto((ContactoIndividual) contacto);
             } else {
-                // Aquí iría la lógica para eliminar grupos
                 JOptionPane.showMessageDialog(this, "La eliminación de grupos no está implementada.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
 
+    /**
+     * Actualiza la lista de contactos visibles en la interfaz.
+     * Se excluyen los contactos desconocidos.
+     */
     private void actualizarListaContactos() {
         DefaultListModel<String> model = new DefaultListModel<>();
-        // --- CAMBIO CLAVE ---
-        // Se llama al método del controlador que ya filtra los contactos desconocidos.
-        for (Contacto contacto : controlador.obtenerContactosConocidos()) { 
-            String prefixedName = (contacto instanceof ContactoIndividual) 
-                ? "Individual: " + contacto.getNombre() 
+        for (Contacto contacto : controlador.obtenerContactosConocidos()) {
+            String prefixedName = (contacto instanceof ContactoIndividual)
+                ? "Individual: " + contacto.getNombre()
                 : "Grupo: " + contacto.getNombre();
             model.addElement(prefixedName);
         }
         contactosList.setModel(model);
     }
 
+    /**
+     * Llamado automáticamente por el controlador cuando cambia la lista de contactos.
+     */
     @Override
     public void updateListaContactos() {
-        // Asegurarse de que la actualización de la UI se ejecute en el Event Dispatch Thread
         SwingUtilities.invokeLater(this::actualizarListaContactos);
     }
 }

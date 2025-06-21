@@ -4,38 +4,37 @@ import java.awt.Image;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import com.itextpdf.awt.geom.Rectangle;
 import com.itextpdf.text.BaseColor;
-import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Element;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import umu.tds.app.persistencia.*;
 
+/**
+ * Controlador principal de la aplicación AppChat.
+ * Implementa el patrón Singleton para garantizar una única instancia global.
+ * Actúa como intermediario entre la vista (GUI) y el modelo (clases de dominio y persistencia),
+ * centralizando toda la lógica de negocio y el flujo de datos de la aplicación.
+ */
 public class Controlador {
     private static final Controlador instancia;
-    private static final Logger LOGGER = Logger.getLogger(Controlador.class.getName());
     private static final int PROFILE_IMAGE_SIZE = 100;
 
     private Usuario usuarioActual;
@@ -57,10 +56,18 @@ public class Controlador {
         }
     }
 
+    /**
+     * Constructor privado para implementar el patrón Singleton.
+     * Llama al método de inicialización.
+     */
     private Controlador() {
         initialize();
     }
 
+    /**
+     * Devuelve la única instancia del Controlador.
+     * @return La instancia Singleton del Controlador.
+     */
     public static Controlador getInstancia() {
         return instancia;
     }
@@ -69,15 +76,21 @@ public class Controlador {
     // SECCIÓN 1: INICIALIZACIÓN Y CARGA DE DATOS
     // ########################################################################
 
+    /**
+     * Orquesta el proceso de inicialización del controlador.
+     * Inicializa los DAOs, las colecciones, realiza una simulación de datos si la base de datos está vacía,
+     * y carga todos los datos desde la capa de persistencia.
+     */
     private void initialize() {
-        LOGGER.info("Inicializando Controlador...");
         initializeDaosAndCollections();
         realizarSimulacionInicialSiEsNecesario();
         cargarDatosDesdePersistencia();
-        LOGGER.info("Inicialización completada.");
         notifyObserversContactoActual(this.contactoActual);
     }
 
+    /**
+     * Inicializa todas las instancias de los adaptadores DAO y las colecciones de datos en memoria.
+     */
     private void initializeDaosAndCollections() {
         usuarioDAO = AdaptadorUsuarioTDS.getInstancia();
         contactoDAO = AdaptadorContactoIndividualTDS.getInstancia();
@@ -89,53 +102,51 @@ public class Controlador {
         observersContactos = new ArrayList<>();
     }
 
- // EN: Controlador.java -> realizarSimulacionInicialSiEsNecesario()
-
+    /**
+     * Comprueba si la base de datos está vacía. Si es así, crea y persiste un conjunto
+     * inicial de usuarios para permitir el funcionamiento de la aplicación desde el primer uso.
+     */
     private void realizarSimulacionInicialSiEsNecesario() {
         if (!usuarioDAO.recuperarTodosUsuarios().isEmpty()) {
             return;
         }
-        LOGGER.info("--- BASE DE DATOS VACÍA: REALIZANDO SIMULACIÓN INICIAL ---");
         try {
             String path = "https://widget-assets.geckochat.io/69d33e2bd0ca2799b2c6a3a3870537a9.png";
             BufferedImage image = ImageIO.read(new URI(path.trim()).toURL());
             ImageIcon foto = new ImageIcon(image);
             Usuario florentino = new Usuario("600111222", "Florentino Pérez", "pass1", "f@p.com", "Hala Madrid", foto, false);
-            florentino.setUrlFoto(path); // ← importante para persistencia
-
-            LOGGER.info("[DEBUG] Registrando a Florentino con URL: " + florentino.getUrlFoto());
+            florentino.setUrlFoto(path);
             usuarioDAO.registrarUsuario(florentino);
             
-         // Los otros usuarios no tienen foto, así que no necesitan setUrlFoto
             Usuario laporta = new Usuario("600333444", "Joan Laporta", "pass2", "j@l.com", "Visca Barça", foto, true);
             usuarioDAO.registrarUsuario(laporta);
-            LOGGER.info("[DEBUG] Florentino registrado con ID: " + florentino.getId());
+            
+            Usuario cerezo = new Usuario("600555666", "Enrique Cerezo", "pass3", "e@c.com", "Aupa Atleti", null, true);
+            usuarioDAO.registrarUsuario(cerezo);
         } catch (Exception e) {
-            LOGGER.severe("[ERROR] Fallo al crear o registrar a Florentino: " + e.getMessage());
             e.printStackTrace();
         }
-
-
-
-        
-        Usuario cerezo = new Usuario("600555666", "Enrique Cerezo", "pass3", "e@c.com", "Aupa Atleti", null, true);
-        usuarioDAO.registrarUsuario(cerezo);
-        LOGGER.info("--- SIMULACIÓN INICIAL COMPLETADA Y PERSISTIDA ---");
     }
 
+    /**
+     * Carga todos los datos desde la persistencia y reconstruye el estado completo de la aplicación.
+     * Selecciona el chat más reciente como chat activo al iniciar.
+     */
     private void cargarDatosDesdePersistencia() {
         cargarUsuarios();
         refrescarEstadoDesdePersistencia();
         
-        // Seleccionar el chat más reciente como chat actual al iniciar
         contactoActual = obtenerContactos().stream()
             .filter(c -> c != null && !c.getMensajes().isEmpty())
             .max(Comparator.comparing(this::getUltimoMensajeTiempo))
             .orElse(null);
     }
     
+    /**
+     * Proceso principal para reconstruir las relaciones entre usuarios, contactos y mensajes
+     * a partir de los datos recuperados de la base de datos.
+     */
     private void refrescarEstadoDesdePersistencia() {
-        LOGGER.info("Refrescando estado desde la persistencia...");
         for (Usuario u : usuariosRegistrados.values()) {
             if (u.getContactos() != null) {
                 u.getContactos().forEach(c -> {
@@ -149,60 +160,66 @@ public class Controlador {
         vincularMensajesAContactos(todosLosContactosDelSistema);
     }
 
+    /**
+     * Carga todos los usuarios de la base de datos a la colección en memoria `usuariosRegistrados`.
+     * Intenta cargar la foto de perfil de cada usuario desde su URL almacenada.
+     */
     private void cargarUsuarios() {
         for (Usuario u : usuarioDAO.recuperarTodosUsuarios()) {
-        	// LOG 4: Verificamos qué URL se recupera para cada usuario
-            LOGGER.info("[FOTO-DEBUG] Procesando usuario: " + u.getNombre() + " con URL: '" + u.getUrlFoto() + "'");
         	try {
 				String urlFoto = u.getUrlFoto();
 				if (urlFoto != null && !urlFoto.isBlank() && !"null".equalsIgnoreCase(urlFoto)) {
-					// LOG 5: Entramos al bloque de carga de imagen
-	                LOGGER.info("[FOTO-DEBUG] Intentando cargar imagen desde URL: " + urlFoto);
 					u.setFoto(loadImageFromUrl(urlFoto));
 				}
 			} catch (Exception e) {
-				LOGGER.warning("Fallo al cargar imagen para usuario " + u.getTelefono() + ": " + e.getMessage());
+                // Silently fail if image loading fails, user will have default icon
 			}
             usuariosRegistrados.put(u.getTelefono(), u);
         }
     }
 
+    /**
+     * Carga todos los contactos individuales y grupos de la base de datos.
+     * @return Un mapa que asocia el código de cada contacto/grupo a su objeto correspondiente.
+     */
     private Map<Integer, Contacto> cargarContactosYGrupos() {
         Map<Integer, Contacto> mapaContactos = new HashMap<>();
-
         List<ContactoIndividual> individuales = contactoDAO.recuperarTodosContactos();
-        System.out.println("[CONTROLADOR-DEBUG] 🔎 Contactos individuales cargados: " + individuales.size());
-        individuales.forEach(c -> System.out.println("  - 📞 " + c.getNombre()));
-
         List<Grupo> grupos = grupoDAO.recuperarTodosGrupos();
-        System.out.println("[CONTROLADOR-DEBUG] 🔎 Grupos cargados: " + grupos.size());
-        grupos.forEach(g -> System.out.println("  - 👥 " + g.getNombre()));
-
         individuales.forEach(c -> mapaContactos.put(c.getCodigo(), c));
         grupos.forEach(g -> mapaContactos.put(g.getCodigo(), g));
         return mapaContactos;
     }
 
-
+    /**
+     * Asocia a cada usuario su lista de contactos correspondiente, utilizando el mapa de todos
+     * los contactos del sistema para resolver las referencias por ID.
+     * @param todosLosContactosDelSistema Mapa con todos los contactos y grupos disponibles.
+     */
     private void vincularContactosAUsuarios(Map<Integer, Contacto> todosLosContactosDelSistema) {
         for (Usuario usuario : usuariosRegistrados.values()) {
             List<Contacto> listaPersonal = usuario.getContactosID().stream()
                 .map(todosLosContactosDelSistema::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-
-            System.out.println("[CONTROLADOR-DEBUG] 🧩 Usuario " + usuario.getNombre() + " tiene " + listaPersonal.size() + " contactos reconstruidos");
-            listaPersonal.forEach(c -> System.out.println("   → " + c.getNombre()));
             usuario.setContactos(listaPersonal);
         }
     }
-
-
+    
+    /**
+     * Cuenta el número total de mensajes enviados por un usuario específico a través de todos sus chats.
+     * @param usuario El usuario cuyos mensajes se van a contar.
+     * @return El número total de mensajes enviados.
+     */
     public int contarMensajesDelUsuario(Usuario usuario) {
     	return (int) obtenerContactos().stream().flatMap(c -> c.getMensajes().stream())
     			.filter(m -> m.getEmisor().equals(usuario)).count();
     }
     
+    /**
+     * Asocia cada mensaje recuperado de la base de datos a su chat correspondiente (contacto o grupo).
+     * @param todosLosContactosDelSistema Mapa con todos los contactos y grupos disponibles.
+     */
     private void vincularMensajesAContactos(Map<Integer, Contacto> todosLosContactosDelSistema) {
         List<Mensaje> mensajes = mensajeDAO.recuperarTodosMensajes();
         for (Mensaje mensaje : mensajes) {
@@ -233,30 +250,29 @@ public class Controlador {
         }
     }
     
- // EN: Controlador.java
-
+    /**
+     * Notifica a todos los observers registrados sobre el estado actual de la aplicación.
+     * Este método es llamado típicamente después de iniciar sesión para cargar la interfaz
+     * con los datos correctos.
+     */
     public void notifyObservers() {
-        //System.out.println("--- CONTROLADOR: INICIO NOTIFICACIÓN INICIAL ---");
-        //System.out.println("--- CONTROLADOR: Notificando lista de contactos. Total conocidos: " + obtenerContactosConocidos().size());
         notifyObserversListaContactos(); 
-        
-        //System.out.println("--- CONTROLADOR: Notificando chats recientes. Total: " + getChatsRecientes().length);
         notifyObserversChatsRecientes();
-        
-        // ESTA ES LA PARTE MÁS IMPORTANTE
-        if (contactoActual != null) {
-            //System.out.println("--- CONTROLADOR: Notificando contacto actual: " + contactoActual.getNombre() + " con " + contactoActual.getMensajes().size() + " mensajes.");
-        } else {
-            //System.out.println("--- CONTROLADOR: Notificando contacto actual: NULL");
-        }
         notifyObserversContactoActual(contactoActual);
-        //System.out.println("--- CONTROLADOR: FIN NOTIFICACIÓN INICIAL ---");
     }
     
     // ########################################################################
     // SECCIÓN 2: LÓGICA DE USUARIO Y SESIÓN
     // ########################################################################
     
+    /**
+     * Intenta iniciar sesión con un teléfono y contraseña.
+     * Si las credenciales son válidas, establece el usuario como activo, carga sus datos
+     * y notifica a la interfaz.
+     * @param telefono El número de teléfono del usuario.
+     * @param password La contraseña del usuario.
+     * @return {@code true} si el inicio de sesión es exitoso, {@code false} en caso contrario.
+     */
     public boolean iniciarSesion(String telefono, String password) {
         Usuario usuario = usuariosRegistrados.get(telefono);
         if (usuario != null && usuario.getPassword().equals(password)) {
@@ -267,16 +283,15 @@ public class Controlador {
                 .max(Comparator.comparing(this::getUltimoMensajeTiempo))
                 .orElse(null);
             
-            SwingUtilities.invokeLater(() -> {
-                //System.out.println("--- CONTROLADOR: Notificación inicial encolada en EDT ---");
-                notifyObservers();
-            });
-
+            SwingUtilities.invokeLater(this::notifyObservers);
             return true;
         }
         return false;
     }
 
+    /**
+     * Cierra la sesión del usuario actual, limpiando los datos de sesión y notificando a la interfaz.
+     */
     public void cerrarSesion() {
         usuarioActual = null;
         contactoActual = null;
@@ -285,6 +300,19 @@ public class Controlador {
         notifyObserversContactoActual(null);
     }
 
+    /**
+     * Registra un nuevo usuario en el sistema.
+     * Realiza validaciones de los datos de entrada antes de crear y persistir el usuario.
+     * @param nombreReal El nombre completo del usuario.
+     * @param nombreUsuario El nombre de usuario (actualmente no utilizado de forma distinta al nombre real).
+     * @param password La contraseña del usuario.
+     * @param confirmarPassword La confirmación de la contraseña.
+     * @param email El correo electrónico del usuario.
+     * @param telefono El número de teléfono del usuario (actúa como ID único).
+     * @param rutaFoto La URL de la foto de perfil.
+     * @param saludo El mensaje de saludo del usuario.
+     * @return {@code true} si el registro es exitoso, {@code false} si hay un error de validación.
+     */
     public boolean registrarUsuario(String nombreReal, String nombreUsuario, String password, String confirmarPassword, String email, String telefono, String rutaFoto, String saludo) {
     	String error = validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono);
 		if (error != null) {
@@ -299,6 +327,14 @@ public class Controlador {
 		return true;
     }
 
+    /**
+     * Actualiza los datos del perfil del usuario actualmente logueado.
+     * @param nuevoNombre El nuevo nombre para el usuario.
+     * @param nuevaPassword La nueva contraseña para el usuario.
+     * @param nuevoSaludo El nuevo mensaje de saludo.
+     * @param rutaFoto La nueva URL de la foto de perfil.
+     * @return {@code true} si la actualización es exitosa, {@code false} en caso contrario.
+     */
     public boolean actualizarUsuario(String nuevoNombre, String nuevaPassword, String nuevoSaludo, String rutaFoto) {
     	if (usuarioActual == null || nuevaPassword == null || nuevaPassword.trim().isEmpty())
 			return false;
@@ -311,6 +347,10 @@ public class Controlador {
 		return true;
     }
 
+    /**
+     * Valida los datos de entrada para el registro de un nuevo usuario.
+     * @return Una cadena con el mensaje de error si la validación falla, o {@code null} si es exitosa.
+     */
     private String validateRegistration(String nombreReal, String nombreUsuario, String password,
 			String confirmarPassword, String email, String telefono) {
 		if (nombreReal.isEmpty() || nombreUsuario.isEmpty() || password.isEmpty() || email.isEmpty()
@@ -325,6 +365,12 @@ public class Controlador {
 		return null;
 	}
     
+    /**
+     * Crea y persiste un nuevo estado para el usuario actual.
+     * @param mensaje El texto del estado.
+     * @param rutaImagen La URL de la imagen del estado.
+     * @return {@code true} si se establece el estado correctamente, {@code false} si no hay un usuario logueado.
+     */
     public boolean establecerStatus(String mensaje, String rutaImagen) {
 		if (usuarioActual == null)
 			return false;
@@ -333,6 +379,11 @@ public class Controlador {
 		return true;
 	}
     
+    /**
+     * Carga una imagen desde una URL y la escala al tamaño de perfil estándar.
+     * @param urlString La URL de la imagen.
+     * @return Un objeto {@code ImageIcon} con la imagen cargada y escalada, o un icono vacío si falla.
+     */
     public ImageIcon loadImageFromUrl(String urlString) {
 		if (urlString == null || urlString.isBlank())
 			return new ImageIcon();
@@ -344,7 +395,7 @@ public class Controlador {
 				return new ImageIcon(scaledImage);
 			}
 		} catch (Exception e) {
-			LOGGER.severe("Error al cargar imagen: " + e.getMessage());
+            // Falla silenciosamente y devuelve un icono vacío
 		}
 		return new ImageIcon();
 	}
@@ -353,6 +404,13 @@ public class Controlador {
     // SECCIÓN 3: LÓGICA DE CONTACTOS Y GRUPOS
     // ########################################################################
 
+    /**
+     * Agrega un nuevo contacto individual a la lista del usuario actual.
+     * Realiza validaciones para asegurar que el usuario a agregar existe y no es un duplicado.
+     * @param nombre El nombre para el nuevo contacto.
+     * @param telefono El número de teléfono del usuario a agregar.
+     * @return {@code true} si el contacto se agrega con éxito, {@code false} en caso contrario.
+     */
     public boolean agregarContacto(String nombre, String telefono) {
         if (usuarioActual == null || nombre.isBlank() || telefono.isBlank()) return false;
         if (!usuariosRegistrados.containsKey(telefono)) {
@@ -371,13 +429,10 @@ public class Controlador {
         return true;
     }
 
- // AÑADIR ESTE NUEVO MÉTODO A Controlador.java
-
     /**
      * Devuelve una lista de todos los contactos que han sido explícitamente guardados
      * por el usuario, excluyendo los contactos desconocidos generados automáticamente.
      * Ideal para ventanas de gestión de contactos.
-     * 
      * @return Una lista de Contactos conocidos (individuales y grupos).
      */
     public List<Contacto> obtenerContactosConocidos() {
@@ -386,53 +441,22 @@ public class Controlador {
         }
         
         return usuarioActual.getContactos().stream()
-            // Filtramos para quedarnos solo con los que NO son desconocidos
             .filter(contacto -> {
                 if (contacto instanceof ContactoIndividual) {
-                    // Si es individual, solo lo incluimos si NO es desconocido
                     return !((ContactoIndividual) contacto).isDesconocido();
                 }
-                // Si es un Grupo, siempre lo incluimos
                 return true; 
             })
-            .sorted(Comparator.comparing(Contacto::getNombre)) // Opcional: devolver la lista ordenada
+            .sorted(Comparator.comparing(Contacto::getNombre))
             .collect(Collectors.toList());
     }
     
-    /*public boolean registrarContactoDesconocido(ContactoIndividual contactoDesconocido, String nuevoNombre) {
-        if (usuarioActual == null || !contactoDesconocido.isDesconocido() || nuevoNombre.isBlank()) return false;
-        if (existeContacto(nuevoNombre)) {
-            JOptionPane.showMessageDialog(null, "Ya existe un contacto con el nombre '" + nuevoNombre + "'.", "Nombre duplicado", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        System.out.println("--- REGISTRANDO CONTACTO DESCONOCIDO ---");
-        System.out.println("Contacto ANTES de modificar: Nombre=" + contactoDesconocido.getNombre() + ", EsDesconocido=" + contactoDesconocido.isDesconocido());
-        contactoDesconocido.registrarComoConocido(nuevoNombre);
-        System.out.println("Contacto DESPUÉS de modificar: Nombre=" + contactoDesconocido.getNombre() + ", EsDesconocido=" + contactoDesconocido.isDesconocido());
-        contactoDAO.modificarContacto(contactoDesconocido);
-        
-        if (!usuarioActual.getContactos().contains(contactoDesconocido)) {
-            usuarioActual.addContacto(contactoDesconocido);
-        }
-        usuarioDAO.modificarUsuario(usuarioActual);
-        
-        PoolDAO.getInstancia().removeObjeto(contactoDesconocido.getCodigo());
-        PoolDAO.getInstancia().addObjeto(contactoDesconocido.getCodigo(), contactoDesconocido);
-        
-        // Leemos de nuevo el contacto DIRECTAMENTE desde la BD
-        ContactoIndividual contactoLeido = contactoDAO.recuperarContacto(contactoDesconocido.getCodigo());
-        
-        if (contactoLeido != null) {
-            //System.out.println("Contacto releído de BD: Nombre=" + contactoLeido.getNombre() + ", EsDesconocido=" + contactoLeido.isDesconocido());
-        } else {
-            //System.out.println("ERROR: No se pudo releer el contacto de la BD.");
-        }
-        notifyObserversListaContactos();
-        notifyObserversChatsRecientes();
-        notifyObserversContactoActual(contactoDesconocido);
-        return true;
-    }*/
-    
+    /**
+     * Agrega un contacto desconocido.
+     * @param contactoDesconocido El objeto {@code ContactoIndividual} marcado como desconocido.
+     * @param nuevoNombre El nombre que el usuario desea asignar a este contacto.
+     * @return {@code true} si el proceso es exitoso, {@code false} en caso contrario.
+     */
     public boolean registrarContactoDesconocido(ContactoIndividual contactoDesconocido, String nuevoNombre) {
         if (usuarioActual == null || !contactoDesconocido.isDesconocido() || nuevoNombre.isBlank()) return false;
         if (existeContacto(nuevoNombre)) {
@@ -440,30 +464,31 @@ public class Controlador {
             return false;
         }
         
-        // Guardamos el ID antiguo antes de que se modifique
         int idAntiguo = contactoDesconocido.getCodigo();
 
-        // Promovemos el contacto y lo modificamos en la BD (esto ahora borra y crea)
         contactoDesconocido.registrarComoConocido(nuevoNombre);
-        contactoDAO.modificarContacto(contactoDesconocido); // Esto cambiará el ID del objeto contactoDesconocido
+        contactoDAO.modificarContacto(contactoDesconocido);
         
-        // El ID nuevo ahora está en el objeto
         int idNuevo = contactoDesconocido.getCodigo();
 
-        // ¡PASO CLAVE! Actualizamos la referencia en la lista de IDs del usuario
         if (usuarioActual.removeContactoID(idAntiguo)) {
             usuarioActual.addContactoID(idNuevo);
-            usuarioDAO.modificarUsuario(usuarioActual); // Persistimos el cambio en el usuario
-            LOGGER.info("Usuario actualizado para reemplazar ID de contacto " + idAntiguo + " por " + idNuevo);
+            usuarioDAO.modificarUsuario(usuarioActual);
         }
         
-        // Las notificaciones ya estaban bien
         notifyObserversListaContactos();
         notifyObserversChatsRecientes();
         notifyObserversContactoActual(contactoDesconocido);
         return true;
     }
     
+    /**
+     * Crea un nuevo grupo, lo persiste y lo añade a la lista de contactos del usuario actual.
+     * @param nombre El nombre del grupo.
+     * @param miembros La lista de contactos individuales que formarán parte del grupo.
+     * @param foto El icono del grupo.
+     * @param urlFoto La URL de la imagen del grupo para persistencia.
+     */
     public void crearGrupo(String nombre, List<ContactoIndividual> miembros, ImageIcon foto, String urlFoto) {
         if (usuarioActual == null || nombre.isBlank() || miembros.isEmpty() || existeContacto(nombre)) return;
         Grupo grupo = new Grupo(nombre, miembros, usuarioActual, foto);
@@ -474,13 +499,16 @@ public class Controlador {
         notifyObserversListaContactos();
     }
     
+    /**
+     * Elimina un contacto individual de la lista del usuario actual.
+     * @param contacto El contacto a eliminar.
+     */
     public void eliminarContacto(ContactoIndividual contacto) {
     	if (usuarioActual == null || contacto == null)
 			return;
 		if (usuarioActual.removeContacto(contacto)) {
 			usuarioDAO.modificarUsuario(usuarioActual);
 			notifyObserversListaContactos();
-			// Opcional: Notificar para actualizar chats si se elimina el chat actual
 			if (contacto.equals(contactoActual)) {
 				setContactoActual(null);
 			}
@@ -488,6 +516,10 @@ public class Controlador {
 		}
     }
     
+    /**
+     * Persiste los cambios realizados en un objeto Grupo (p. ej., añadir/eliminar miembros).
+     * @param grupo El grupo con los datos modificados.
+     */
     public void modificarGrupo(Grupo grupo) {
         grupoDAO.modificarGrupo(grupo);
     }
@@ -496,6 +528,12 @@ public class Controlador {
     // SECCIÓN 4: LÓGICA DE MENSAJERÍA
     // ########################################################################
 
+    /**
+     * Envía un mensaje de un solo uso a un contacto individual.
+     * Persiste el mensaje y lo añade al historial del chat correspondiente.
+     * @param contactoDestino El contacto que recibirá el mensaje.
+     * @param contenido El texto del mensaje.
+     */
     public void enviarMensaje(ContactoIndividual contactoDestino, String contenido) {
         Usuario emisor = usuarioActual;
         Mensaje mensaje = new Mensaje(contenido, LocalDateTime.now(), emisor, contactoDestino);
@@ -506,6 +544,12 @@ public class Controlador {
         notifyObserversContactoActual(contactoActual);
     }
     
+    /**
+     * Si el receptor de un mensaje no tiene al emisor en sus contactos, este método crea
+     * un "contacto desconocido" para que el receptor pueda ver el chat.
+     * @param emisor El usuario que envía el mensaje.
+     * @param contactoOriginal El contacto del emisor que representa al receptor.
+     */
     private void crearContactoReversoSiNoExiste(Usuario emisor, ContactoIndividual contactoOriginal) {
         Usuario receptor = usuariosRegistrados.get(contactoOriginal.getTelefono());
         if (receptor == null) return;
@@ -521,6 +565,12 @@ public class Controlador {
         }
     }
 
+    /**
+     * Envía un mensaje a todos los miembros de un grupo.
+     * Internamente, se traduce en enviar mensajes individuales a cada participante.
+     * @param grupo El grupo destino.
+     * @param contenido El texto del mensaje.
+     */
     public void enviarMensajeAGrupo(Grupo grupo, String contenido) {
         if (grupo == null || contenido.isBlank() || usuarioActual == null) return;
         for (ContactoIndividual miembro : grupo.getParticipantes()) {
@@ -532,10 +582,15 @@ public class Controlador {
                 .findFirst()
                 .ifPresent(contactoDirecto -> enviarMensaje(contactoDirecto, contenido));
         }
-        //notifyObserversChatsRecientes();
-	    //notifyObserversContactoActual(contactoActual);
     }
     
+    /**
+     * Busca mensajes en todos los chats del usuario actual que coincidan con los criterios de búsqueda.
+     * @param texto Texto a buscar dentro del contenido del mensaje.
+     * @param telefono Teléfono del emisor o receptor.
+     * @param nombre Nombre del emisor o receptor.
+     * @return Una lista de mensajes que cumplen los filtros, ordenados por fecha.
+     */
     public List<Mensaje> buscarMensajes(String texto, String telefono, String nombre) {
     	return obtenerContactos().stream().flatMap(contacto -> contacto.getMensajes().stream())
 				.filter(mensaje -> (texto == null || texto.isBlank()
@@ -553,6 +608,10 @@ public class Controlador {
     // SECCIÓN 5: FUNCIONALIDADES PREMIUM Y EXTRAS
     // ########################################################################
     
+    /**
+     * Inicia el proceso para que el usuario actual se convierta en Premium.
+     * Calcula los descuentos aplicables y, si el usuario acepta, actualiza su estado.
+     */
     public void activarPremiumConDescuento() {
     	if (usuarioActual == null)
 			return;
@@ -567,6 +626,13 @@ public class Controlador {
 		}
     }
 
+    /**
+     * Exporta un informe en PDF con la agenda completa del usuario y el historial detallado
+     * de un chat específico. Esta función solo está disponible para usuarios Premium.
+     * @param rutaDestino La ruta del archivo donde se guardará el PDF.
+     * @param contactoADetallar El contacto cuyo historial de chat se incluirá en el informe.
+     * @return {@code true} si la exportación es exitosa, {@code false} en caso contrario.
+     */
     public boolean exportarPdfConDatos(String rutaDestino, ContactoIndividual contactoADetallar) {
         if (usuarioActual == null || !usuarioActual.isPremium()) {
             JOptionPane.showMessageDialog(null, "Solo los usuarios Premium pueden exportar.", "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
@@ -582,10 +648,8 @@ public class Controlador {
             Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.DARK_GRAY);
             Font fontSeccion = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
             Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 11);
-            Font fontMiembro = FontFactory.getFont(FontFactory.COURIER, 10);
             Font fontMensajePropio = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, BaseColor.BLUE);
             Font fontMensajeAjeno = FontFactory.getFont(FontFactory.HELVETICA, 9, BaseColor.BLACK);
-            Font fontFecha = FontFactory.getFont(FontFactory.HELVETICA, 8, BaseColor.GRAY);
 
             // SECCIÓN 1: AGENDA
             Paragraph titulo = new Paragraph("Informe de Usuario y Agenda", fontTitulo);
@@ -664,93 +728,243 @@ public class Controlador {
         }
     }
 
-    
-    
     // ########################################################################
     // SECCIÓN 6: MÉTODOS GETTER Y AUXILIARES
     // ########################################################################
+    /**
+     * Devuelve el usuario actualmente autenticado.
+     * @return el usuario actual o {@code null} si no hay sesión iniciada.
+     */
+    public Usuario getUsuarioActual() {
+        return usuarioActual;
+    }
 
-    public Usuario getUsuarioActual() { return usuarioActual; }
-    public Contacto getContactoActual() { return contactoActual; }
-    public void setContactoActual(Contacto contacto) { this.contactoActual = contacto; notifyObserversContactoActual(contacto); }
-    public Usuario buscarUsuarioPorTelefono(String telefono) { return usuariosRegistrados.get(telefono); }
-    public List<Contacto> obtenerContactos() { return usuarioActual != null ? usuarioActual.getContactos() : Collections.emptyList(); }
-    public Contacto obtenerContactoPorNombre(String nombre) { return obtenerContactos().stream().filter(c -> c.getNombre().equalsIgnoreCase(nombre)).findFirst().orElse(null); }
-    public List<Mensaje> getMensajes(Contacto contacto) { return (contacto != null) ? contacto.getMensajes().stream().sorted().collect(Collectors.toList()) : Collections.emptyList(); }
+    /**
+     * Devuelve el contacto actualmente seleccionado.
+     * @return el contacto actual, o {@code null} si no hay contacto activo.
+     */
+    public Contacto getContactoActual() {
+        return contactoActual;
+    }
+
+    /**
+     * Establece el contacto actual y notifica a los observadores.
+     * @param contacto contacto que se va a activar en la vista.
+     */
+    public void setContactoActual(Contacto contacto) {
+        this.contactoActual = contacto;
+        notifyObserversContactoActual(contacto);
+    }
+
+    /**
+     * Busca un usuario registrado por su número de teléfono.
+     * @param telefono número de teléfono a buscar.
+     * @return el usuario correspondiente o {@code null} si no existe.
+     */
+    public Usuario buscarUsuarioPorTelefono(String telefono) {
+        return usuariosRegistrados.get(telefono);
+    }
+
+    /**
+     * Devuelve la lista de contactos del usuario actual.
+     * @return lista de contactos o vacía si no hay sesión iniciada.
+     */
+    public List<Contacto> obtenerContactos() {
+        return (usuarioActual != null) ? usuarioActual.getContactos() : Collections.emptyList();
+    }
+
+    /**
+     * Busca un contacto conocido por su nombre.
+     * @param nombre nombre del contacto a buscar.
+     * @return el contacto si existe, o {@code null} si no se encuentra.
+     */
+    public Contacto obtenerContactoPorNombre(String nombre) {
+        return obtenerContactos().stream()
+                .filter(c -> c.getNombre().equalsIgnoreCase(nombre))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Devuelve los mensajes ordenados cronológicamente de un contacto.
+     * @param contacto contacto del que obtener los mensajes.
+     * @return lista de mensajes ordenada o vacía si es {@code null}.
+     */
+    public List<Mensaje> getMensajes(Contacto contacto) {
+        return (contacto != null) ?
+                contacto.getMensajes().stream().sorted().collect(Collectors.toList()) :
+                Collections.emptyList();
+    }
+
+    /**
+     * Genera la lista de chats recientes para el usuario actual.
+     * @return array de cadenas con la descripción de los chats recientes.
+     */
     public String[] getChatsRecientes() {
         if (usuarioActual == null) {
             return new String[]{"No hay chats recientes"};
         }
 
         List<String> chats = usuarioActual.getContactos().stream()
-                // 1. Filtrar solo los contactos que tienen mensajes
                 .filter(c -> c != null && !c.getMensajes().isEmpty())
-                // 2. Ordenarlos por el tiempo del último mensaje (más reciente primero)
                 .sorted(Comparator.comparing(this::getUltimoMensajeTiempo).reversed())
-                // 3. Mapear cada contacto a un String con el formato deseado
                 .map(c -> "Chat con " + c.getNombre())
-                // 4. Recolectar los resultados en una lista
                 .collect(Collectors.toList());
 
-        if (chats.isEmpty()) {
-            return new String[]{"No hay chats recientes"};
-        }
-        
-        // Convertir la lista a un array de Strings
-        return chats.toArray(new String[0]);
+        return chats.isEmpty() ? new String[]{"No hay chats recientes"} : chats.toArray(new String[0]);
     }
-    public boolean existeContacto(String nombre) { if (usuarioActual == null) return false; return obtenerContactos().stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre.trim())); }
-    public boolean existeContactoConTelefono(String telefono) { if (usuarioActual == null) return false; return obtenerContactos().stream().filter(c -> c instanceof ContactoIndividual).map(c -> (ContactoIndividual) c).anyMatch(c -> c.getTelefono().equals(telefono)); }
-    private LocalDateTime getUltimoMensajeTiempo(Contacto contacto) { return contacto.getMensajes().stream().map(Mensaje::getHora).max(LocalDateTime::compareTo).orElse(LocalDateTime.MIN); }
-    public String getNombreUserActual() { return (usuarioActual != null) ? usuarioActual.getNombre() : "Desconectado"; }
-    public boolean isPremiumUserActual() { return (usuarioActual != null) && usuarioActual.isPremium(); }
 
+    /**
+     * Verifica si ya existe un contacto con el nombre dado.
+     * @param nombre nombre del contacto.
+     * @return {@code true} si ya existe, {@code false} en caso contrario.
+     */
+    public boolean existeContacto(String nombre) {
+        if (usuarioActual == null) return false;
+        return obtenerContactos().stream()
+                .anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre.trim()));
+    }
+
+    /**
+     * Verifica si ya existe un contacto individual con el número de teléfono dado.
+     * @param telefono número de teléfono a verificar.
+     * @return {@code true} si ya existe, {@code false} si no.
+     */
+    public boolean existeContactoConTelefono(String telefono) {
+        if (usuarioActual == null) return false;
+        return obtenerContactos().stream()
+                .filter(c -> c instanceof ContactoIndividual)
+                .map(c -> (ContactoIndividual) c)
+                .anyMatch(c -> c.getTelefono().equals(telefono));
+    }
+
+    /**
+     * Obtiene el tiempo del último mensaje enviado o recibido con un contacto.
+     * @param contacto contacto del cual obtener el último tiempo de mensaje.
+     * @return {@link LocalDateTime} del mensaje más reciente o {@code LocalDateTime.MIN} si no hay mensajes.
+     */
+    private LocalDateTime getUltimoMensajeTiempo(Contacto contacto) {
+        return contacto.getMensajes().stream()
+                .map(Mensaje::getHora)
+                .max(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.MIN);
+    }
+
+    /**
+     * Obtiene el nombre del usuario actualmente autenticado.
+     * @return nombre del usuario actual o "Desconectado" si no hay sesión iniciada.
+     */
+    public String getNombreUserActual() {
+        return (usuarioActual != null) ? usuarioActual.getNombre() : "Desconectado";
+    }
+
+    /**
+     * Verifica si el usuario actual tiene cuenta Premium.
+     * @return {@code true} si es Premium, {@code false} en caso contrario.
+     */
+    public boolean isPremiumUserActual() {
+        return (usuarioActual != null) && usuarioActual.isPremium();
+    }
+
+    /**
+     * Obtiene el icono de perfil del usuario actual.
+     * @return {@link ImageIcon} correspondiente o icono vacío si no está definido.
+     */
     public ImageIcon getIconoUserActual() {
         if (usuarioActual == null) {
-            // LOG 7: Si la vista pide el icono pero no hay usuario
-            LOGGER.warning("[FOTO-DEBUG] getIconoUserActual llamado, pero usuarioActual es NULL.");
             return new ImageIcon();
         }
-        
         ImageIcon foto = usuarioActual.getFoto();
-        
-        if (foto != null && foto.getIconWidth() > 0) {
-            // LOG 7: Verificamos que estamos devolviendo un icono válido
-            LOGGER.info("[FOTO-DEBUG] getIconoUserActual devuelve un ImageIcon VÁLIDO de " + foto.getIconWidth() + "x" + foto.getIconHeight());
-        } else {
-            // LOG 7: Verificamos si el icono es nulo o está vacío
-            LOGGER.warning("[FOTO-DEBUG] getIconoUserActual devuelve un ImageIcon NULO o VACÍO. URL del usuario: " + usuarioActual.getUrlFoto());
-        }
-        
-        return foto != null ? foto : new ImageIcon();
-    }    
-    
+        return (foto != null) ? foto : new ImageIcon();
+    }
+
+    /**
+     * Busca un contacto individual por teléfono y lo crea si no existe.
+     * @param telefono teléfono del contacto a buscar o crear.
+     * @return el contacto individual asociado o {@code null} si no se encuentra o falla la creación.
+     */
     public ContactoIndividual obtenerOcrearContactoParaTelefono(String telefono) {
         if (usuarioActual == null || telefono.isBlank()) return null;
+
         Optional<ContactoIndividual> contactoExistente = obtenerContactos().stream()
-            .filter(c -> c instanceof ContactoIndividual).map(c -> (ContactoIndividual) c)
-            .filter(c -> c.getTelefono().equals(telefono)).findFirst();
+                .filter(c -> c instanceof ContactoIndividual)
+                .map(c -> (ContactoIndividual) c)
+                .filter(c -> c.getTelefono().equals(telefono))
+                .findFirst();
+
         if (contactoExistente.isPresent()) return contactoExistente.get();
+
         Usuario usuarioDestino = buscarUsuarioPorTelefono(telefono);
         if (usuarioDestino == null) {
-            JOptionPane.showMessageDialog(null, "No existe ningún usuario con el teléfono " + telefono, "Usuario no encontrado", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                    "No existe ningún usuario con el teléfono " + telefono,
+                    "Usuario no encontrado", JOptionPane.WARNING_MESSAGE);
             return null;
         }
+
         if (agregarContacto(usuarioDestino.getNombre(), telefono)) {
             return (ContactoIndividual) obtenerContactoPorNombre(usuarioDestino.getNombre());
         }
-        return null; 
+
+        return null;
     }
 
     // ########################################################################
     // SECCIÓN 7: OBSERVERS
     // ########################################################################
 
-    public void addObserverChats(ObserverChats o) { if (!observersChats.contains(o)) observersChats.add(o); }
-    public void removeObserverChats(ObserverChats o) { observersChats.remove(o); }
-    public void addObserverContactos(ObserverContactos o) { if (!observersContactos.contains(o)) observersContactos.add(o); }
-    public void removeObserverContactos(ObserverContactos o) { observersContactos.remove(o); }
-    private void notifyObserversContactoActual(Contacto c) { observersChats.forEach(o -> o.updateContactoActual(c)); }
-    private void notifyObserversListaContactos() { observersContactos.forEach(ObserverContactos::updateListaContactos); }
-    private void notifyObserversChatsRecientes() { String[] chatsRecientes = getChatsRecientes(); observersChats.forEach(observer -> observer.updateChatsRecientes(chatsRecientes)); }
+    /**
+     * Añade un observador para actualizaciones del contacto actual o chats recientes.
+     * @param o observador a registrar.
+     */
+    public void addObserverChats(ObserverChats o) {
+        if (!observersChats.contains(o)) observersChats.add(o);
+    }
+
+    /**
+     * Elimina un observador de actualizaciones de chats.
+     * @param o observador a eliminar.
+     */
+    public void removeObserverChats(ObserverChats o) {
+        observersChats.remove(o);
+    }
+
+    /**
+     * Añade un observador de la lista de contactos.
+     * @param o observador a registrar.
+     */
+    public void addObserverContactos(ObserverContactos o) {
+        if (!observersContactos.contains(o)) observersContactos.add(o);
+    }
+
+    /**
+     * Elimina un observador de la lista de contactos.
+     * @param o observador a eliminar.
+     */
+    public void removeObserverContactos(ObserverContactos o) {
+        observersContactos.remove(o);
+    }
+
+    /**
+     * Notifica a todos los observadores que ha cambiado el contacto actual.
+     * @param c nuevo contacto actual.
+     */
+    private void notifyObserversContactoActual(Contacto c) {
+        observersChats.forEach(o -> o.updateContactoActual(c));
+    }
+
+    /**
+     * Notifica a todos los observadores que ha cambiado la lista de contactos.
+     */
+    private void notifyObserversListaContactos() {
+        observersContactos.forEach(ObserverContactos::updateListaContactos);
+    }
+
+    /**
+     * Notifica a todos los observadores que deben actualizar la vista de chats recientes.
+     */
+    private void notifyObserversChatsRecientes() {
+        String[] chatsRecientes = getChatsRecientes();
+        observersChats.forEach(observer -> observer.updateChatsRecientes(chatsRecientes));
+    }
 }

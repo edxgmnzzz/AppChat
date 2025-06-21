@@ -2,57 +2,81 @@ package umu.tds.app.AppChat;
 
 import javax.swing.ImageIcon;
 
+/**
+ * Representa a un contacto individual, que puede ser conocido o desconocido.
+ * Un contacto desconocido es aquel que se ha creado automáticamente al recibir un mensaje
+ * de un número no registrado por el usuario.
+ */
 public class ContactoIndividual extends Contacto {
     private String telefono;
-    private boolean esDesconocido; // Flag para saber si fue creado automáticamente
+    private boolean esDesconocido;
 
     /**
      * Constructor para contactos creados explícitamente por el usuario.
+     *
      * @param nombre El alias que el usuario le da al contacto.
      * @param telefono El número de teléfono del contacto.
      */
     public ContactoIndividual(String nombre, String telefono) {
         super(nombre);
         this.telefono = telefono;
-        this.esDesconocido = false; // Un contacto creado con nombre no es desconocido
+        this.esDesconocido = false;
     }
 
     /**
-     * Constructor para contactos "desconocidos", creados automáticamente al recibir un mensaje.
+     * Constructor para contactos desconocidos, creados automáticamente al recibir un mensaje.
+     *
      * @param telefono El número de teléfono del contacto.
      */
     public ContactoIndividual(String telefono) {
-        super(telefono); // Por defecto, el nombre es el propio teléfono
+        super(telefono); // Se usa el número como nombre por defecto
         this.telefono = telefono;
         this.esDesconocido = true;
     }
 
+    /**
+     * Devuelve el número de teléfono del contacto.
+     *
+     * @return El número de teléfono.
+     */
     public String getTelefono() {
         return telefono;
     }
 
+    /**
+     * Indica si el contacto es desconocido (creado automáticamente).
+     *
+     * @return true si el contacto es desconocido, false si ha sido registrado por el usuario.
+     */
     public boolean isDesconocido() {
         return esDesconocido;
     }
 
     /**
-     * "Promueve" un contacto desconocido a uno conocido, asignándole un nombre definitivo.
+     * Convierte un contacto desconocido en uno conocido asignándole un nombre.
+     *
      * @param nuevoNombre El nombre proporcionado por el usuario.
      */
     public void registrarComoConocido(String nuevoNombre) {
-        this.setNombre(nuevoNombre); // setNombre es heredado de la clase Contacto
+        this.setNombre(nuevoNombre);
         this.esDesconocido = false;
     }
 
-    // Este método debería ser manejado por la vista llamando al controlador
+    /**
+     * Devuelve una imagen por defecto como icono de contacto.
+     *
+     * @return Un ImageIcon por defecto.
+     */
     @Override
     public ImageIcon getFoto() {
-        // La vista debería obtener el usuario a través del controlador y luego su foto.
-        // Devolvemos un icono por defecto para que el modelo no dependa del controlador.
-        return new ImageIcon(); 
+        return new ImageIcon();
     }
-    
-    // hashCode y equals se basan en el teléfono, que es el identificador único del otro usuario.
+
+    /**
+     * Calcula el código hash del contacto basándose en el número de teléfono.
+     *
+     * @return Código hash único.
+     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -61,6 +85,13 @@ public class ContactoIndividual extends Contacto {
         return result;
     }
 
+    /**
+     * Compara este contacto con otro para determinar si son iguales.
+     * Dos contactos son iguales si tienen el mismo número de teléfono.
+     *
+     * @param obj Objeto a comparar.
+     * @return true si los contactos tienen el mismo número de teléfono.
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -68,8 +99,9 @@ public class ContactoIndividual extends Contacto {
         if (getClass() != obj.getClass()) return false;
         ContactoIndividual other = (ContactoIndividual) obj;
         if (telefono == null) {
-            if (other.telefono != null) return false;
-        } else if (!telefono.equals(other.telefono)) return false;
-        return true;
+            return other.telefono == null;
+        } else {
+            return telefono.equals(other.telefono);
+        }
     }
 }

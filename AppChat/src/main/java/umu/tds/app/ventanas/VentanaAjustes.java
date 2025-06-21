@@ -6,6 +6,11 @@ import java.awt.event.*;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Theme;
 
+/**
+ * Ventana emergente de ajustes de usuario. Permite editar ciertos campos como
+ * el nombre, la contraseña, saludo y la URL de la foto.
+ * Muestra otros datos del usuario actual de forma no editable.
+ */
 public class VentanaAjustes extends JDialog {
     private static final long serialVersionUID = 1L;
     private JTextField nombreField, emailField, telefonoField, saludoField;
@@ -13,13 +18,18 @@ public class VentanaAjustes extends JDialog {
     private JTextField fotoField;
     private Controlador controlador;
 
+    /**
+     * Crea la ventana de ajustes con los datos del usuario actual cargados.
+     */
     public VentanaAjustes() {
         controlador = Controlador.getInstancia();
         configurarVentana();
         crearComponentes();
     }
 
-
+    /**
+     * Configura el tamaño, forma y posición de la ventana.
+     */
     private void configurarVentana() {
         setSize(400, 500);
         setLocationRelativeTo(getParent());
@@ -27,6 +37,9 @@ public class VentanaAjustes extends JDialog {
         setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 400, 500, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
     }
 
+    /**
+     * Agrega el contenido principal a la ventana, incluyendo barra de título y formulario.
+     */
     private void crearComponentes() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Theme.COLOR_FONDO);
@@ -38,6 +51,11 @@ public class VentanaAjustes extends JDialog {
         add(mainPanel);
     }
 
+    /**
+     * Crea la barra de título con el título "Ajustes" y un botón para cerrar.
+     * 
+     * @return Panel con la barra de título.
+     */
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
@@ -74,6 +92,11 @@ public class VentanaAjustes extends JDialog {
         return barraTitulo;
     }
 
+    /**
+     * Crea el formulario de ajustes con los campos editables y no editables.
+     * 
+     * @return Panel con el formulario completo de ajustes.
+     */
     private JPanel crearPanelContenido() {
         JPanel panelContenido = new JPanel(new GridBagLayout());
         panelContenido.setBackground(Theme.COLOR_FONDO);
@@ -122,11 +145,9 @@ public class VentanaAjustes extends JDialog {
         gbc.gridy = 5;
         panelContenido.add(new JLabel("URL Foto:"), gbc);
         gbc.gridx = 1;
-        // ⚠ Aquí cargamos el URL actual desde el usuario
         fotoField = new JTextField(controlador.getUsuarioActual().getUrlFoto(), 20);
         panelContenido.add(fotoField, gbc);
 
-        // ✅ Mostramos Premium pero no editable
         gbc.gridx = 0;
         gbc.gridy = 6;
         panelContenido.add(new JLabel("Premium:"), gbc);
@@ -144,7 +165,13 @@ public class VentanaAjustes extends JDialog {
         return panelContenido;
     }
 
-
+    /**
+     * Crea un botón estilizado con los colores del tema y una acción asociada.
+     *
+     * @param text Texto del botón.
+     * @param action Acción a ejecutar al pulsarlo.
+     * @return JButton con estilo personalizado.
+     */
     private JButton createStyledButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setBackground(Theme.COLOR_PRINCIPAL);
@@ -167,21 +194,25 @@ public class VentanaAjustes extends JDialog {
         return button;
     }
 
-private void guardarCambios() {
-    String nuevoNombre = nombreField.getText().trim();
-    String nuevaPassword = new String(passwordField.getPassword()).trim();
-    String nuevoSaludo = saludoField.getText().trim();
-    String nuevaFoto = fotoField.getText().trim();  // ahora sí contiene la URL actual si no la cambias
+    /**
+     * Intenta guardar los nuevos valores introducidos por el usuario. Si la contraseña
+     * está vacía, se conserva la anterior.
+     * Muestra un mensaje de confirmación o error.
+     */
+    private void guardarCambios() {
+        String nuevoNombre = nombreField.getText().trim();
+        String nuevaPassword = new String(passwordField.getPassword()).trim();
+        String nuevoSaludo = saludoField.getText().trim();
+        String nuevaFoto = fotoField.getText().trim();
 
-    if (controlador.actualizarUsuario(nuevoNombre, 
-        nuevaPassword.isEmpty() ? controlador.getUsuarioActual().getPassword() : nuevaPassword, 
-        nuevoSaludo, nuevaFoto)) {
+        if (controlador.actualizarUsuario(nuevoNombre,
+            nuevaPassword.isEmpty() ? controlador.getUsuarioActual().getPassword() : nuevaPassword,
+            nuevoSaludo, nuevaFoto)) {
 
-        JOptionPane.showMessageDialog(this, "Perfil actualizado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-        dispose();
-    } else {
-        JOptionPane.showMessageDialog(this, "Error al actualizar el perfil", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Perfil actualizado con éxito", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al actualizar el perfil", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
-}
-
 }

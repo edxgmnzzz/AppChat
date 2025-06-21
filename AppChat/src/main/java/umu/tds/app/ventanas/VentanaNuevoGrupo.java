@@ -6,31 +6,58 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Theme;
 
+/**
+ * Ventana para crear un nuevo grupo en la aplicación de mensajería.
+ * Permite introducir un nombre, seleccionar contactos y añadir una URL de imagen.
+ * Aplica estilo visual definido por la clase {@link Theme}.
+ * 
+ * La ventana se comporta como un JDialog modal y sin bordes decorativos.
+ * 
+ */
 public class VentanaNuevoGrupo extends JDialog {
     private static final long serialVersionUID = 1L;
+
+    /** Campo para introducir el nombre del grupo. */
     private JTextField groupNameField;
+
+    /** Campo para introducir la URL de la imagen del grupo. */
     private JTextField imageUrlField;
+
+    /** Lista de contactos disponibles que se pueden añadir al grupo. */
     private JList<String> availableContactsList;
+
+    /** Lista de contactos seleccionados para formar parte del grupo. */
     private JList<String> selectedMembersList;
+
+    /** Controlador de la lógica de la aplicación. */
     private Controlador controlador;
+
+    /** Modelo para los contactos disponibles. */
     private DefaultListModel<String> availableModel;
+
+    /** Modelo para los miembros seleccionados. */
     private DefaultListModel<String> selectedModel;
 
+    /**
+     * Constructor. Inicializa la ventana, controlador y los componentes visuales.
+     */
     public VentanaNuevoGrupo() {
-
         controlador = Controlador.getInstancia();
         configurarVentana();
         crearComponentes();
     }
 
+    /**
+     * Configura propiedades básicas de la ventana como tamaño, posición y estilo sin decoración.
+     */
     private void configurarVentana() {
         setSize(600, 400);
         setLocationRelativeTo(getParent());
@@ -38,6 +65,9 @@ public class VentanaNuevoGrupo extends JDialog {
         setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 600, 400, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
     }
 
+    /**
+     * Crea todos los componentes internos de la ventana y los añade al panel principal.
+     */
     private void crearComponentes() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBackground(Theme.COLOR_FONDO);
@@ -49,6 +79,10 @@ public class VentanaNuevoGrupo extends JDialog {
         add(mainPanel);
     }
 
+    /**
+     * Crea la barra superior con título y botón para cerrar la ventana.
+     * @return panel con la barra de título
+     */
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
@@ -85,11 +119,14 @@ public class VentanaNuevoGrupo extends JDialog {
         return barraTitulo;
     }
 
+    /**
+     * Crea el contenido principal con campos, listas de contactos y botones.
+     * @return panel con los componentes principales
+     */
     private JPanel crearPanelContenido() {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBackground(Theme.COLOR_FONDO);
 
-        // Group Name Input
         JPanel namePanel = new JPanel(new FlowLayout());
         namePanel.setBackground(Theme.COLOR_FONDO);
         JLabel nameLabel = new JLabel("Nombre del Grupo:");
@@ -103,11 +140,9 @@ public class VentanaNuevoGrupo extends JDialog {
         namePanel.add(nameLabel);
         namePanel.add(groupNameField);
 
-        // Contact Selection Panels
         JPanel selectionPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         selectionPanel.setBackground(Theme.COLOR_FONDO);
 
-        // Available Contacts (Left)
         availableModel = new DefaultListModel<>();
         cargarContactosDisponibles();
         availableContactsList = new JList<>(availableModel);
@@ -119,7 +154,6 @@ public class VentanaNuevoGrupo extends JDialog {
         availablePanel.setBorder(BorderFactory.createTitledBorder("Contactos Disponibles"));
         availablePanel.add(availableScrollPane, BorderLayout.CENTER);
 
-        // Move Buttons (Center)
         JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 5, 5));
         buttonPanel.setBackground(Theme.COLOR_FONDO);
         JButton addButton = createStyledButton(">>", e -> agregarMiembro());
@@ -127,7 +161,6 @@ public class VentanaNuevoGrupo extends JDialog {
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
 
-        // Selected Members (Right)
         selectedModel = new DefaultListModel<>();
         selectedMembersList = new JList<>(selectedModel);
         selectedMembersList.setBackground(Theme.COLOR_SECUNDARIO);
@@ -142,15 +175,11 @@ public class VentanaNuevoGrupo extends JDialog {
         selectionPanel.add(buttonPanel);
         selectionPanel.add(selectedPanel);
 
-        // Bottom Buttons
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.setBackground(Theme.COLOR_FONDO);
         JButton createButton = createStyledButton("Crear Grupo", e -> crearGrupo());
         JButton cancelButton = createStyledButton("Cancelar", e -> dispose());
-        
-        // Group Image URL Input
-        //JPanel imagePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        //imagePanel.setBackground(Theme.COLOR_FONDO);
+
         JLabel imageLabel = new JLabel("URL de la Imagen:");
         imageLabel.setFont(Theme.FONT_BOLD_MEDIUM);
         imageLabel.setForeground(Theme.COLOR_SECUNDARIO);
@@ -159,8 +188,7 @@ public class VentanaNuevoGrupo extends JDialog {
         imageUrlField.setForeground(Theme.COLOR_PRINCIPAL);
         imageUrlField.setBackground(Theme.COLOR_SECUNDARIO);
         imageUrlField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
-        //imagePanel.add(imageLabel);
-        //imagePanel.add(imageUrlField);
+
         bottomPanel.add(imageLabel);
         bottomPanel.add(imageUrlField);
         bottomPanel.add(createButton);
@@ -169,11 +197,17 @@ public class VentanaNuevoGrupo extends JDialog {
         mainPanel.add(namePanel, BorderLayout.NORTH);
         mainPanel.add(selectionPanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        //mainPanel.add(imagePanel, BorderLayout.SOUTH);
 
         return mainPanel;
     }
 
+    /**
+     * Crea un botón estilizado con los colores definidos en el tema.
+     * 
+     * @param text Texto del botón.
+     * @param action Acción que se ejecutará al pulsarlo.
+     * @return botón personalizado
+     */
     private JButton createStyledButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setBackground(Theme.COLOR_PRINCIPAL);
@@ -196,6 +230,9 @@ public class VentanaNuevoGrupo extends JDialog {
         return button;
     }
 
+    /**
+     * Carga los contactos individuales disponibles del controlador al modelo de lista.
+     */
     private void cargarContactosDisponibles() {
         List<Contacto> contactos = controlador.obtenerContactos();
         for (Contacto c : contactos) {
@@ -205,6 +242,9 @@ public class VentanaNuevoGrupo extends JDialog {
         }
     }
 
+    /**
+     * Mueve el contacto seleccionado a la lista de miembros del grupo.
+     */
     private void agregarMiembro() {
         String selectedContact = availableContactsList.getSelectedValue();
         if (selectedContact != null) {
@@ -213,6 +253,9 @@ public class VentanaNuevoGrupo extends JDialog {
         }
     }
 
+    /**
+     * Quita el contacto de la lista de miembros seleccionados y lo devuelve a disponibles.
+     */
     private void quitarMiembro() {
         String selectedMember = selectedMembersList.getSelectedValue();
         if (selectedMember != null) {
@@ -221,9 +264,13 @@ public class VentanaNuevoGrupo extends JDialog {
         }
     }
 
+    /**
+     * Valida el nombre del grupo, selecciona los miembros y crea el grupo.
+     * Si se proporciona una URL válida, se usará como imagen del grupo.
+     */
     private void crearGrupo() {
         String groupName = groupNameField.getText().trim();
-        String urlFoto = imageUrlField.getText().trim(); // <-- NUEVO
+        String urlFoto = imageUrlField.getText().trim();
 
         if (groupName.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor, introduce un nombre para el grupo.",
@@ -259,10 +306,8 @@ public class VentanaNuevoGrupo extends JDialog {
 
         if (!urlFoto.isBlank()) {
             try {
-                //icono = new ImageIcon(ImageIO.read(new URI(urlFoto)));
-                BufferedImage image = ImageIO.read(new URI(urlFoto).toURL()); // Carga la imagen remota correctamente
+                BufferedImage image = ImageIO.read(new URI(urlFoto).toURL());
                 icono = new ImageIcon(image);
-
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this,
                     "No se pudo cargar la imagen desde la URL proporcionada.\nSe creará el grupo sin imagen.",
@@ -275,5 +320,4 @@ public class VentanaNuevoGrupo extends JDialog {
             "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }
-
 }
