@@ -3,17 +3,31 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import umu.tds.app.AppChat.ContactoIndividual;
+
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Theme;
-import umu.tds.app.AppChat.Usuario;
 
+/**
+ * Ventana modal para permitir al usuario agregar un nuevo contacto individual a su lista de contactos.
+ * Se accede desde la interfaz principal de AppChat.
+ */
 public class VentanaNuevoContacto extends JDialog {
     private static final long serialVersionUID = 1L;
+
+    /** Campo de texto para introducir el nombre del contacto */
     private JTextField nombreField;
+
+    /** Campo de texto para introducir el número de teléfono del contacto */
     private JTextField telefonoField;
+
+    /** Controlador de la lógica de la aplicación */
     private Controlador controlador;
 
+    /**
+     * Constructor de la ventana de nuevo contacto.
+     *
+     * @param parent Ventana padre desde la cual se lanza este diálogo.
+     */
     public VentanaNuevoContacto(JDialog parent) {
         super(parent, "Añadir Contacto", ModalityType.APPLICATION_MODAL);
         controlador = Controlador.getInstancia();
@@ -21,6 +35,9 @@ public class VentanaNuevoContacto extends JDialog {
         crearComponentes();
     }
 
+    /**
+     * Configura los parámetros básicos de la ventana: tamaño, ubicación, forma redondeada, etc.
+     */
     private void configurarVentana() {
         setSize(300, 200);
         setLocationRelativeTo(getParent());
@@ -28,10 +45,14 @@ public class VentanaNuevoContacto extends JDialog {
         setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 300, 200, Theme.BORDER_RADIUS, Theme.BORDER_RADIUS));
     }
 
+    /**
+     * Crea y organiza todos los componentes de la ventana.
+     */
     private void crearComponentes() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Theme.COLOR_FONDO);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(
+                Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
 
         mainPanel.add(crearBarraTitulo(), BorderLayout.NORTH);
         mainPanel.add(crearPanelContenido(), BorderLayout.CENTER);
@@ -39,6 +60,11 @@ public class VentanaNuevoContacto extends JDialog {
         add(mainPanel);
     }
 
+    /**
+     * Crea la barra de título con el nombre de la ventana y el botón de cerrar.
+     *
+     * @return JPanel configurado como barra superior.
+     */
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(Theme.COLOR_PRINCIPAL);
@@ -75,6 +101,11 @@ public class VentanaNuevoContacto extends JDialog {
         return barraTitulo;
     }
 
+    /**
+     * Crea el panel central con los campos de entrada de datos y botones de acción.
+     *
+     * @return JPanel con los componentes de entrada.
+     */
     private JPanel crearPanelContenido() {
         JPanel panelContenido = new JPanel(new GridBagLayout());
         panelContenido.setBackground(Theme.COLOR_FONDO);
@@ -85,7 +116,8 @@ public class VentanaNuevoContacto extends JDialog {
         JLabel nombreLabel = new JLabel("Nombre:");
         nombreLabel.setFont(Theme.FONT_BOLD_MEDIUM);
         nombreLabel.setForeground(Theme.COLOR_SECUNDARIO);
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         panelContenido.add(nombreLabel, gbc);
 
         nombreField = new JTextField(15);
@@ -93,13 +125,15 @@ public class VentanaNuevoContacto extends JDialog {
         nombreField.setForeground(Theme.COLOR_PRINCIPAL);
         nombreField.setBackground(Theme.COLOR_SECUNDARIO);
         nombreField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
-        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.gridx = 1;
+        gbc.gridy = 0;
         panelContenido.add(nombreField, gbc);
 
         JLabel telefonoLabel = new JLabel("Teléfono:");
         telefonoLabel.setFont(Theme.FONT_BOLD_MEDIUM);
         telefonoLabel.setForeground(Theme.COLOR_SECUNDARIO);
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         panelContenido.add(telefonoLabel, gbc);
 
         telefonoField = new JTextField(15);
@@ -107,7 +141,8 @@ public class VentanaNuevoContacto extends JDialog {
         telefonoField.setForeground(Theme.COLOR_PRINCIPAL);
         telefonoField.setBackground(Theme.COLOR_SECUNDARIO);
         telefonoField.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 2));
-        gbc.gridx = 1; gbc.gridy = 1;
+        gbc.gridx = 1;
+        gbc.gridy = 1;
         panelContenido.add(telefonoField, gbc);
 
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -117,12 +152,21 @@ public class VentanaNuevoContacto extends JDialog {
         botonesPanel.add(aceptarBoton);
         botonesPanel.add(cancelarBoton);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
         panelContenido.add(botonesPanel, gbc);
 
         return panelContenido;
     }
 
+    /**
+     * Crea un botón estilizado para aceptar o cancelar.
+     *
+     * @param text   texto visible en el botón
+     * @param action acción a ejecutar al pulsar el botón
+     * @return JButton con estilo definido
+     */
     private JButton createStyledButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setBackground(Theme.COLOR_PRINCIPAL);
@@ -130,14 +174,15 @@ public class VentanaNuevoContacto extends JDialog {
         button.setFont(Theme.FONT_BOLD_MEDIUM);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                BorderFactory.createLineBorder(Theme.COLOR_ACENTO, 1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
         button.addActionListener(action);
         button.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_HOVER);
             }
+
             public void mouseExited(MouseEvent evt) {
                 button.setBackground(Theme.COLOR_PRINCIPAL);
             }
@@ -145,38 +190,39 @@ public class VentanaNuevoContacto extends JDialog {
         return button;
     }
 
- // Este método está en tu clase de la ventana (Ej: VentanaAgregarContacto.java)
-
+    /**
+     * Lógica que valida los campos y, si es correcto, intenta agregar el contacto mediante el controlador.
+     * Muestra un mensaje de éxito o error según el resultado.
+     */
     private void agregarContacto() {
         String nombre = nombreField.getText().trim();
         String telefono = telefonoField.getText().trim();
 
-        // 1. Validar la entrada del usuario (esto está perfecto como lo tenías)
         if (nombre.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "El campo 'Nombre' no puede estar vacío.", "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (!telefono.matches("\\d{9,15}")) { // Asumimos un formato de 9 a 15 dígitos
-            JOptionPane.showMessageDialog(this, "El formato del teléfono es inválido. Debe contener solo números (9-15 dígitos).", "Error de validación", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "El campo 'Nombre' no puede estar vacío.",
+                    "Error de validación",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // 2. Llamar al nuevo método del controlador, pasándole SOLO los datos primitivos.
-        //    El controlador se encargará de todas las comprobaciones internas.
-        //    Ya no creamos el objeto ContactoIndividual aquí.
+        if (!telefono.matches("\\d{9,15}")) {
+            JOptionPane.showMessageDialog(this,
+                    "El formato del teléfono es inválido. Debe contener solo números (9-15 dígitos).",
+                    "Error de validación",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         boolean exito = controlador.agregarContacto(nombre, telefono);
-        
-        // 3. Gestionar la respuesta del controlador.
-        //    El controlador ya se encarga de mostrar los mensajes de error específicos (usuario no encontrado, contacto ya existe).
-        //    Aquí solo gestionamos el caso de éxito para cerrar la ventana.
-        if (exito) {
-            JOptionPane.showMessageDialog(this, "Contacto '" + nombre + "' agregado correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            dispose(); // Cierra la ventana de agregar contacto
-        } 
-        // Nota: Los mensajes de error como "Usuario no encontrado" o "Contacto ya existe" 
-        // ahora los muestra el propio controlador, lo que es una mejor práctica (centraliza la lógica).
-        // Si prefieres que la ventana los muestre, el método del controlador podría devolver un enum o un código de resultado.
-        // Pero para empezar, esta es la forma más limpia.
-    }
 
+        if (exito) {
+            JOptionPane.showMessageDialog(this,
+                    "Contacto '" + nombre + "' agregado correctamente.",
+                    "Éxito",
+                    JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        }
+        // Los errores más específicos se gestionan y muestran desde el Controlador
+    }
 }

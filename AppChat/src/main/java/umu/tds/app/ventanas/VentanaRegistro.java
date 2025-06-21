@@ -11,25 +11,40 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 
+/**
+ * Ventana de registro para nuevos usuarios en la aplicación AppChat.
+ * Permite introducir datos como nombre, usuario, contraseña, email, teléfono,
+ * fecha de nacimiento, foto y mensaje de saludo.
+ * Utiliza {@link Theme} para estilos y {@link Controlador} para lógica.
+ */
 public class VentanaRegistro extends JFrame {
     private static final long serialVersionUID = 1L;
-    
+
     private JTextField campoNombreReal, campoNombreUsuario, campoEmail, campoTelefono, campoRutaFoto, campoSaludo;
     private JPasswordField campoPassword, campoConfirmarPassword;
     private JDateChooser campoFechaNacimiento;
     private Point initialClick;
     private final Controlador controlador;
 
+    /**
+     * Constructor. Inicializa la ventana y sus componentes.
+     */
     public VentanaRegistro() {
         controlador = Controlador.getInstancia();
         initializeUI();
     }
 
+    /**
+     * Inicializa la interfaz de usuario.
+     */
     private void initializeUI() {
         configurarVentana();
         crearComponentes();
     }
 
+    /**
+     * Configura la ventana (tamaño, posición, estilo).
+     */
     private void configurarVentana() {
         setSize(500, 700);
         setUndecorated(true);
@@ -38,6 +53,9 @@ public class VentanaRegistro extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
+    /**
+     * Crea y organiza los componentes visuales de la ventana.
+     */
     private void crearComponentes() {
         JPanel panelPrincipal = new JPanel(new BorderLayout());
         panelPrincipal.setBackground(Theme.COLOR_FONDO);
@@ -46,6 +64,9 @@ public class VentanaRegistro extends JFrame {
         add(panelPrincipal);
     }
 
+    /**
+     * Crea la barra superior de la ventana con controles (minimizar, cerrar).
+     */
     private JPanel crearBarraTitulo() {
         JPanel barraTitulo = new JPanel(new BorderLayout());
         barraTitulo.setBackground(Theme.COLOR_HEADER);
@@ -78,6 +99,9 @@ public class VentanaRegistro extends JFrame {
         return barraTitulo;
     }
 
+    /**
+     * Crea un botón de la barra de título.
+     */
     private JButton crearBotonControl(String texto, ActionListener accion) {
         JButton boton = new JButton(texto);
         boton.setPreferredSize(new Dimension(45, Theme.TITLE_BAR_HEIGHT));
@@ -99,6 +123,9 @@ public class VentanaRegistro extends JFrame {
         return boton;
     }
 
+    /**
+     * Crea el panel central con el formulario de registro.
+     */
     private JPanel crearPanelFormulario() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(Theme.COLOR_FONDO);
@@ -121,13 +148,13 @@ public class VentanaRegistro extends JFrame {
         agregarCampo(panel, "Confirmar Contraseña:", campoConfirmarPassword = new JPasswordField(20), gbc, y++);
         agregarCampo(panel, "Email:", campoEmail = new JTextField(20), gbc, y++);
         agregarCampo(panel, "Teléfono:", campoTelefono = new JTextField(20), gbc, y++);
-        
+
         panel.add(crearLabel("Fecha de Nacimiento:"), gbc(0, y));
         campoFechaNacimiento = new JDateChooser();
         campoFechaNacimiento.setFont(Theme.FONT_PLAIN_MEDIUM);
         campoFechaNacimiento.setPreferredSize(new Dimension(200, 25));
         panel.add(campoFechaNacimiento, gbc(1, y++));
-        
+
         agregarCampo(panel, "URL de Foto:", campoRutaFoto = new JTextField(20), gbc, y++);
         agregarCampo(panel, "Mensaje de Saludo:", campoSaludo = new JTextField(20), gbc, y++);
 
@@ -198,6 +225,9 @@ public class VentanaRegistro extends JFrame {
         return gbc;
     }
 
+    /**
+     * Ejecuta las validaciones y registra al usuario si los datos son válidos.
+     */
     private void registrarUsuario() {
         String nombreReal = campoNombreReal.getText().trim();
         String nombreUsuario = campoNombreUsuario.getText().trim();

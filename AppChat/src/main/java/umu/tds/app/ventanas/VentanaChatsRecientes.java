@@ -3,18 +3,29 @@ package umu.tds.app.ventanas;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.util.Arrays;
 
 import umu.tds.app.AppChat.Contacto;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.ObserverChats;
 import umu.tds.app.AppChat.Theme;
 
+/**
+ * Panel lateral que muestra la lista de chats recientes del usuario.
+ * Permite seleccionar un contacto para abrir la conversación correspondiente.
+ */
 public class VentanaChatsRecientes extends JPanel implements ObserverChats {
     private static final long serialVersionUID = 1L;
+
+    /** Lista visual de los chats recientes. */
     private JList<String> chatList;
+
+    /** Controlador principal de la aplicación. */
     private Controlador controlador;
 
+    /**
+     * Constructor de la ventana de chats recientes.
+     * Inicializa componentes visuales y registra el observador en el controlador.
+     */
     public VentanaChatsRecientes() {
         controlador = Controlador.getInstancia();
         controlador.addObserverChats(this);
@@ -22,10 +33,15 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         setLayout(new BorderLayout());
         setBackground(Theme.COLOR_FONDO);
         setPreferredSize(new Dimension(200, 0));
-        setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL), "Chats",
-            TitledBorder.CENTER, TitledBorder.TOP, Theme.FONT_BOLD_MEDIUM, Theme.COLOR_TEXTO));
+        setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL),
+                "Chats",
+                TitledBorder.CENTER,
+                TitledBorder.TOP,
+                Theme.FONT_BOLD_MEDIUM,
+                Theme.COLOR_TEXTO
+        ));
 
-        // Inicializar chatList con un array vacío y luego actualizarlo
         chatList = new JList<>(new String[0]);
         chatList.setCellRenderer(new CustomChatListRenderer());
         chatList.setBackground(Theme.COLOR_SECUNDARIO);
@@ -44,28 +60,38 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         });
 
         JScrollPane scrollPane = new JScrollPane(chatList);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(
+                Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL, Theme.PADDING_SMALL));
         add(scrollPane, BorderLayout.CENTER);
 
-        // Forzar actualización inicial después de construir la ventana
         SwingUtilities.invokeLater(() -> {
-            updateChatsRecientes(controlador.getChatsRecientes()); // Actualizar manualmente con los chats actuales
-            sincronizarSeleccionConContactoActual(); // Asegurar que el contacto actual se seleccione
+            updateChatsRecientes(controlador.getChatsRecientes());
+            sincronizarSeleccionConContactoActual();
         });
     }
+
+    /**
+     * Devuelve la lista de chats visual.
+     * @return componente JList con los chats.
+     */
     public JList<String> getChatList() {
         return chatList;
     }
 
+    /**
+     * Actualiza la lista de chats recientes con nuevos datos.
+     * @param chatsRecientes lista de chats en formato de texto.
+     */
     public void actualizarLista(String[] chatsRecientes) {
-
         SwingUtilities.invokeLater(() -> {
             chatList.setListData(chatsRecientes);
             if (chatsRecientes.length == 1 && chatsRecientes[0].equals("No hay chats recientes")) {
                 chatList.setForeground(Color.GRAY);
                 chatList.setCellRenderer(new DefaultListCellRenderer() {
-                    @Override
-                    public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
+                    private static final long serialVersionUID = 1L;
+
+					@Override
+                    public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                                   boolean isSelected, boolean cellHasFocus) {
                         Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                         c.setForeground(Color.GRAY);
@@ -83,35 +109,50 @@ public class VentanaChatsRecientes extends JPanel implements ObserverChats {
         });
     }
 
+    /**
+     * Sincroniza la selección actual de la lista con el contacto seleccionado en el controlador.
+     */
     private void sincronizarSeleccionConContactoActual() {
         Contacto contactoActual = controlador.getContactoActual();
         String currentSelection = chatList.getSelectedValue();
         String expectedSelection = contactoActual != null ? "Chat con " + contactoActual.getNombre() : null;
+
         if (contactoActual != null && !expectedSelection.equals(currentSelection)) {
             chatList.setSelectedValue(expectedSelection, true);
-        } else if (contactoActual == null && chatList.getModel().getSize() > 0 
-                  && !chatList.getModel().getElementAt(0).equals("No hay chats recientes")) {
+        } else if (contactoActual == null && chatList.getModel().getSize() > 0
+                && !chatList.getModel().getElementAt(0).equals("No hay chats recientes")) {
             chatList.setSelectedIndex(0);
         }
     }
 
+    /**
+     * Recibe la actualización de la lista de chats recientes desde el controlador.
+     * @param chatsRecientes array con los nombres de los chats recientes.
+     */
     @Override
     public void updateChatsRecientes(String[] chatsRecientes) {
-        //System.out.println("--- VentanaChatsRecientes: updateChatsRecientes RECIBIDO con " + chatsRecientes.length + " chats.");
         actualizarLista(chatsRecientes);
-        //System.out.println("Actualizando lista de chats recientes: " + Arrays.toString(chatsRecientes));
     }
 
+    /**
+     * Se ejecuta cuando cambia el contacto actual.
+     * Sincroniza la selección visual.
+     * @param contacto nuevo contacto actual.
+     */
     @Override
     public void updateContactoActual(Contacto contacto) {
         sincronizarSeleccionConContactoActual();
     }
 
+    /**
+     * Renderizador personalizado para cada celda de la lista de chats.
+     * Cambia los colores según el tema y si está seleccionado o no.
+     */
     private class CustomChatListRenderer extends DefaultListCellRenderer {
         private static final long serialVersionUID = 1L;
 
         @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, 
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
             Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (isSelected) {

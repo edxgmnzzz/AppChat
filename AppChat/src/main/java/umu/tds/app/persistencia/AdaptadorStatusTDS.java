@@ -10,22 +10,38 @@ import tds.driver.FactoriaServicioPersistencia;
 import tds.driver.ServicioPersistencia;
 import umu.tds.app.AppChat.Status;
 
+/**
+ * AdaptadorStatusTDS proporciona una interfaz para registrar, modificar,
+ * borrar y recuperar estados de usuario (Status) usando el sistema de
+ * persistencia TDS.
+ */
 public class AdaptadorStatusTDS implements StatusDAO {
 
 	private static ServicioPersistencia sp;
 	private static AdaptadorStatusTDS unicaInstancia = null;
 	private static final String ENTIDAD_STATUS = "estado";
 
+	/**
+	 * Constructor privado para seguir el patrón Singleton.
+	 */
 	private AdaptadorStatusTDS() {
 		sp = FactoriaServicioPersistencia.getInstance().getServicioPersistencia();
 	}
 
+	/**
+	 * Devuelve la instancia única del adaptador.
+	 * @return Instancia única de AdaptadorStatusTDS
+	 */
 	public static AdaptadorStatusTDS getInstancia() {
 		if (unicaInstancia == null)
 			unicaInstancia = new AdaptadorStatusTDS();
 		return unicaInstancia;
 	}
 
+	/**
+	 * Registra un nuevo estado en la base de datos.
+	 * @param status Estado a registrar
+	 */
 	@Override
 	public void registrarEstado(Status status) {
 		if (status == null || status.getCodigo() > 0) return;
@@ -41,12 +57,20 @@ public class AdaptadorStatusTDS implements StatusDAO {
 		status.setCodigo(eStatus.getId());
 	}
 
+	/**
+	 * Borra un estado de la base de datos.
+	 * @param status Estado a borrar
+	 */
 	@Override
 	public void borrarEstado(Status status) {
 		Entidad e = sp.recuperarEntidad(status.getCodigo());
 		sp.borrarEntidad(e);
 	}
 
+	/**
+	 * Modifica un estado ya registrado en la base de datos.
+	 * @param status Estado a modificar
+	 */
 	@Override
 	public void modificarEstado(Status status) {
 		Entidad e = sp.recuperarEntidad(status.getCodigo());
@@ -56,6 +80,11 @@ public class AdaptadorStatusTDS implements StatusDAO {
 		sp.anadirPropiedadEntidad(e, "imagen", status.getImg().getDescription() != null ? status.getImg().getDescription() : "");
 	}
 
+	/**
+	 * Recupera un estado dado su código identificador.
+	 * @param codigo Identificador del estado
+	 * @return Objeto Status correspondiente
+	 */
 	@Override
 	public Status recuperarEstado(int codigo) {
 		Entidad e = sp.recuperarEntidad(codigo);
@@ -73,6 +102,10 @@ public class AdaptadorStatusTDS implements StatusDAO {
 		return status;
 	}
 
+	/**
+	 * Recupera todos los estados almacenados en la base de datos.
+	 * @return Lista de objetos Status
+	 */
 	@Override
 	public List<Status> recuperarTodosEstados() {
 		List<Entidad> entidades = sp.recuperarEntidades(ENTIDAD_STATUS);

@@ -11,16 +11,32 @@ import tds.driver.ServicioPersistencia;
 import umu.tds.app.AppChat.ContactoIndividual;
 import umu.tds.app.AppChat.Mensaje;
 
+/**
+ * Adaptador DAO para la entidad {@link ContactoIndividual} usando el servicio de
+ * persistencia TDS. Se encarga de registrar, recuperar, modificar y borrar
+ * contactos individuales en la base de datos y de mantener un pequeño
+ * cache en memoria mediante PoolDAO.
+
+ */
 public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
+
     private static ServicioPersistencia sp;
     private static AdaptadorContactoIndividualTDS unicaInstancia = null;
     private static final String ENTIDAD_CONTACTO = "contactoIndividual";
     private static final Logger LOGGER = Logger.getLogger(AdaptadorContactoIndividualTDS.class.getName());
 
+    /**
+     * Constructor privado para cumplir el patrón Singleton.
+     */
     private AdaptadorContactoIndividualTDS() {
         sp = FactoriaServicioPersistencia.getInstance().getServicioPersistencia();
     }
 
+    /**
+     * Devuelve la única instancia del adaptador (patrón Singleton).
+     *
+     * @return Instancia única de {@code AdaptadorContactoIndividualTDS}.
+     */
     public static AdaptadorContactoIndividualTDS getInstancia() {
         if (unicaInstancia == null) {
             unicaInstancia = new AdaptadorContactoIndividualTDS();
@@ -28,6 +44,17 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
         return unicaInstancia;
     }
 
+    // ─────────────────────────── Registro ───────────────────────────
+
+    /**
+     * Registra un {@link ContactoIndividual} en la base de datos. Si el contacto
+     * ya está persistido (tiene código &gt; 0 y existe en BD), se devuelve tal
+     * cual.
+     *
+     * @param contacto Contacto a registrar.
+     * @return El mismo contacto, ya registrado y con ID asignado; {@code null}
+     *         si el contacto era nulo.
+     */
     @Override
     public ContactoIndividual registrarContacto(ContactoIndividual contacto) {
         if (contacto == null) {
@@ -36,194 +63,153 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
         }
 
         if (contacto.getCodigo() > 0 && sp.recuperarEntidad(contacto.getCodigo()) != null) {
-            // Ya existe, no hacer nada.
+            // Ya existía en la BD; no se hace nada.
             return contacto;
         }
 
         Entidad eContacto = new Entidad();
         eContacto.setNombre(ENTIDAD_CONTACTO);
-        
-        // Se crea una lista mutable para poder añadir propiedades.
-        List<Propiedad> propiedades = new ArrayList<>();
-        propiedades.add(new Propiedad("nombre", contacto.getNombre()));
-        propiedades.add(new Propiedad("telefono", contacto.getTelefono()));
-        // <-- AÑADIDO: Guardar el estado 'esDesconocido'
-        propiedades.add(new Propiedad("esDesconocido", String.valueOf(contacto.isDesconocido())));
-        propiedades.add(new Propiedad("mensajes", codigosDeMensajes(contacto.getMensajes())));
-        
-        eContacto.setPropiedades(propiedades);
+
+        List<Propiedad> props = new ArrayList<>();
+        props.add(new Propiedad("nombre", contacto.getNombre()));
+        props.add(new Propiedad("telefono", contacto.getTelefono()));
+        props.add(new Propiedad("esDesconocido", String.valueOf(contacto.isDesconocido())));
+        props.add(new Propiedad("mensajes", codigosDeMensajes(contacto.getMensajes())));
+        eContacto.setPropiedades(props);
 
         eContacto = sp.registrarEntidad(eContacto);
         contacto.setCodigo(eContacto.getId());
-        
         PoolDAO.getInstancia().addObjeto(contacto.getCodigo(), contacto);
-        LOGGER.info("Contacto '" + contacto.getNombre() + "' registrado con ID: " + contacto.getCodigo());
         return contacto;
     }
 
+    // ─────────────────────────── Recuperación ───────────────────────────
+
+    /**
+     * Recupera un {@link ContactoIndividual} desde su ID. Utiliza primero el
+     * {@link PoolDAO} para evitar accesos redundantes a la base de datos.
+     *
+     * @param codigo ID del contacto.
+     * @return Contacto reconstruido o {@code null} si no existe.
+     */
     @Override
     public ContactoIndividual recuperarContacto(int codigo) {
+        // 1. Intentar cache
         if (PoolDAO.getInstancia().contiene(codigo)) {
-            ContactoIndividual cached = (ContactoIndividual) PoolDAO.getInstancia().getObjeto(codigo);
-            LOGGER.info("🔁 Contacto recuperado del PoolDAO: " + cached.getNombre() + " [ID=" + codigo + "], esDesconocido=" + cached.isDesconocido());
-            return cached;
+            return (ContactoIndividual) PoolDAO.getInstancia().getObjeto(codigo);
         }
 
+        // 2. Ir a la BD
         Entidad e = sp.recuperarEntidad(codigo);
         if (e == null) {
-            LOGGER.warning("⚠️ No se encontró la entidad con ID=" + codigo);
+            LOGGER.warning("No se encontró la entidad contactoIndividual con ID=" + codigo);
             return null;
         }
 
         String nombre = sp.recuperarPropiedadEntidad(e, "nombre");
         String telefono = sp.recuperarPropiedadEntidad(e, "telefono");
-        String esDesconocidoStr = sp.recuperarPropiedadEntidad(e, "esDesconocido");
-        boolean esDesconocido = Boolean.parseBoolean(esDesconocidoStr);
+        boolean esDesconocido = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "esDesconocido"));
 
-        LOGGER.info("📥 Propiedades recuperadas: nombre=" + nombre + ", telefono=" + telefono + ", esDesconocido=" + esDesconocidoStr);
-
-        ContactoIndividual contacto;
-        if (esDesconocido) {
-            contacto = new ContactoIndividual(telefono);
-            contacto.setNombre(nombre); // puede haber sido modificado
-        } else {
-            contacto = new ContactoIndividual(nombre, telefono);
-        }
-
+        ContactoIndividual contacto = esDesconocido ? new ContactoIndividual(telefono) : new ContactoIndividual(nombre, telefono);
+        if (esDesconocido) contacto.setNombre(nombre); // pudo ser renombrado
         contacto.setCodigo(codigo);
         PoolDAO.getInstancia().addObjeto(codigo, contacto);
 
-        LOGGER.info("✅ ContactoIndividual reconstruido: " + contacto.getNombre() + " [ID=" + codigo + "], esDesconocido=" + contacto.isDesconocido());
-
-        String codigosMensajes = sp.recuperarPropiedadEntidad(e, "mensajes");
-        if (codigosMensajes != null && !codigosMensajes.isBlank()) {
-            List<Mensaje> mensajes = obtenerMensajesDesdeCodigos(codigosMensajes);
-            mensajes.forEach(contacto::sendMensaje);
-            LOGGER.info("✉️ Se han vinculado " + mensajes.size() + " mensajes al contacto " + contacto.getNombre());
+        // Vincular mensajes
+        String codigosMsg = sp.recuperarPropiedadEntidad(e, "mensajes");
+        if (codigosMsg != null && !codigosMsg.isBlank()) {
+            obtenerMensajesDesdeCodigos(codigosMsg).forEach(contacto::sendMensaje);
         }
-
         return contacto;
     }
 
+    // ─────────────────────────── Modificación ───────────────────────────
 
-   /* @Override
-    public void modificarContacto(ContactoIndividual contacto) {
-        Entidad e = sp.recuperarEntidad(contacto.getCodigo());
-        if (e == null) {
-            LOGGER.warning("Intento de modificar un contacto no persistido con ID: " + contacto.getCodigo());
-            return;
-        }
-
-        sp.eliminarPropiedadEntidad(e, "nombre");
-        sp.anadirPropiedadEntidad(e, "nombre", contacto.getNombre());
-
-        sp.eliminarPropiedadEntidad(e, "telefono");
-        sp.anadirPropiedadEntidad(e, "telefono", contacto.getTelefono());
-
-        // <-- AÑADIDO: Modificar el estado 'esDesconocido'
-        sp.eliminarPropiedadEntidad(e, "esDesconocido");
-        System.out.println("Aquí, contacto.isDesconocido es" + String.valueOf(contacto.isDesconocido()));
-        sp.anadirPropiedadEntidad(e, "esDesconocido", String.valueOf(contacto.isDesconocido()));
-
-        sp.eliminarPropiedadEntidad(e, "mensajes");
-        sp.anadirPropiedadEntidad(e, "mensajes", codigosDeMensajes(contacto.getMensajes()));
-    }*/
-    
- // EN: umu.tds.app.persistencia.AdaptadorContactoIndividualTDS.java
-
+    /**
+     * Modifica un contacto sobrescribiendo la entidad en BD. Para simplificar y
+     * evitar inconsistencias se borra la entidad antigua y se vuelve a crear.
+     * Se actualiza también el ID en memoria.
+     *
+     * @param contacto Contacto a modificar.
+     */
     @Override
     public void modificarContacto(ContactoIndividual contacto) {
-        // 1. Recuperar la entidad antigua para poder borrarla.
         Entidad eAntigua = sp.recuperarEntidad(contacto.getCodigo());
-        
         if (eAntigua == null) {
-            LOGGER.warning("Intento de modificar un contacto no persistido con ID: " + contacto.getCodigo() + ". Se registrará como nuevo.");
-            // Si no existe, simplemente lo registramos.
+            LOGGER.warning("Intento de modificar contacto no persistido con ID=" + contacto.getCodigo() + ". Se registra como nuevo.");
             registrarContacto(contacto);
             return;
         }
 
-        // -- LA LÓGICA CLAVE: BORRAR Y CREAR DE NUEVO --
-        // Este enfoque es más robusto que modificar propiedades una a una.
-        
-        // 2. Borrar la entidad antigua de la persistencia.
+        // 1. Borrar la entidad vieja
         sp.borrarEntidad(eAntigua);
-        
-        // 3. Crear una nueva entidad con los datos actualizados del objeto 'contacto'.
+
+        // 2. Crear nueva entidad con propiedades actualizadas
         Entidad eNueva = new Entidad();
         eNueva.setNombre(ENTIDAD_CONTACTO);
-        
-        // Se crea una lista mutable para poder añadir propiedades.
-        List<Propiedad> propiedades = new ArrayList<>();
-        propiedades.add(new Propiedad("nombre", contacto.getNombre()));
-        propiedades.add(new Propiedad("telefono", contacto.getTelefono()));
-        propiedades.add(new Propiedad("esDesconocido", String.valueOf(contacto.isDesconocido())));
-        propiedades.add(new Propiedad("mensajes", codigosDeMensajes(contacto.getMensajes())));
-        
-        eNueva.setPropiedades(propiedades);
-
-        // 4. Registrar la nueva entidad. Esto nos dará un NUEVO ID.
+        List<Propiedad> props = new ArrayList<>();
+        props.add(new Propiedad("nombre", contacto.getNombre()));
+        props.add(new Propiedad("telefono", contacto.getTelefono()));
+        props.add(new Propiedad("esDesconocido", String.valueOf(contacto.isDesconocido())));
+        props.add(new Propiedad("mensajes", codigosDeMensajes(contacto.getMensajes())));
+        eNueva.setPropiedades(props);
         eNueva = sp.registrarEntidad(eNueva);
-        
-        // 5. Opcional pero MUY RECOMENDADO: Actualizar el código del objeto en memoria.
-        // Aunque el ID pueda cambiar, es bueno mantener la consistencia.
-        // Primero, removemos la entrada antigua del PoolDAO si existe.
-        if (PoolDAO.getInstancia().contiene(contacto.getCodigo())) {
-            PoolDAO.getInstancia().removeObjeto(contacto.getCodigo());
-        }
 
-        // Actualizamos el código en el objeto Java
+        // 3. Sincronizar ID en memoria y en cache
+        PoolDAO pool = PoolDAO.getInstancia();
+        pool.removeObjeto(contacto.getCodigo());
         contacto.setCodigo(eNueva.getId());
-
-        // Añadimos el objeto actualizado al pool con su nuevo ID.
-        PoolDAO.getInstancia().addObjeto(contacto.getCodigo(), contacto);
-
-        LOGGER.info("Contacto '" + contacto.getNombre() + "' modificado (re-registrado) con nuevo ID: " + contacto.getCodigo());
+        pool.addObjeto(contacto.getCodigo(), contacto);
     }
-    
-    // --- MÉTODOS SIN CAMBIOS ---
-    
+
+    // ─────────────────────────── Listado y borrado ───────────────────────────
+
+    /**
+     * Recupera todos los contactos individuales persistidos.
+     *
+     * @return Lista de contactos.
+     */
     @Override
     public List<ContactoIndividual> recuperarTodosContactos() {
         List<Entidad> entidades = sp.recuperarEntidades(ENTIDAD_CONTACTO);
-        List<ContactoIndividual> contactos = new ArrayList<>();
-
+        List<ContactoIndividual> lista = new ArrayList<>();
         for (Entidad e : entidades) {
             ContactoIndividual c = recuperarContacto(e.getId());
-            if (c != null) {
-                contactos.add(c);
-            } else {
-                LOGGER.warning("Error: No se pudo recuperar el contacto con ID: " + e.getId());
-            }
+            if (c != null) lista.add(c);
         }
-        return contactos;
+        return lista;
     }
-    
+
+    /**
+     * Elimina un contacto de la persistencia y del {@link PoolDAO}.
+     *
+     * @param contacto Contacto a borrar.
+     */
     @Override
     public void borrarContacto(ContactoIndividual contacto) {
         Entidad e = sp.recuperarEntidad(contacto.getCodigo());
-        if (e != null) {
-            sp.borrarEntidad(e);
-        }
-        if (PoolDAO.getInstancia().contiene(contacto.getCodigo())) {
-            PoolDAO.getInstancia().removeObjeto(contacto.getCodigo());
-        }
+        if (e != null) sp.borrarEntidad(e);
+        PoolDAO.getInstancia().removeObjeto(contacto.getCodigo());
     }
 
+    // ─────────────────────────── Utilidades ───────────────────────────
+
+    /**
+     * Convierte una lista de mensajes en una cadena de IDs separados por espacio.
+     */
     private String codigosDeMensajes(List<Mensaje> mensajes) {
         if (mensajes == null || mensajes.isEmpty()) return "";
-        return mensajes.stream()
-                .map(m -> String.valueOf(m.getCodigo()))
-                .collect(Collectors.joining(" "));
+        return mensajes.stream().map(m -> String.valueOf(m.getCodigo())).collect(Collectors.joining(" "));
     }
 
+    /**
+     * Reconstruye una lista de mensajes a partir de una cadena de IDs.
+     */
     private List<Mensaje> obtenerMensajesDesdeCodigos(String codigos) {
         if (codigos == null || codigos.isBlank()) return new ArrayList<>();
-        
         List<Mensaje> mensajes = new ArrayList<>();
         StringTokenizer st = new StringTokenizer(codigos);
         AdaptadorMensajeTDS adaptadorMsg = AdaptadorMensajeTDS.getInstancia();
-
         while (st.hasMoreTokens()) {
             try {
                 int id = Integer.parseInt(st.nextToken());

@@ -2,13 +2,16 @@ package umu.tds.app.ventanas;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import umu.tds.app.AppChat.Controlador;
 import umu.tds.app.AppChat.Mensaje;
 import umu.tds.app.AppChat.Theme;
 
+/**
+ * Clase que representa una ventana de búsqueda de mensajes en la aplicación.
+ * Permite al usuario buscar mensajes por texto, teléfono o nombre de contacto.
+ */
 public class VentanaBusqueda extends JFrame {
     private static final long serialVersionUID = 1L;
     private Controlador controlador;
@@ -17,6 +20,9 @@ public class VentanaBusqueda extends JFrame {
     private JTextField contactSearch;
     private JPanel messagesPanel;
 
+    /**
+     * Crea una nueva instancia de la ventana de búsqueda.
+     */
     public VentanaBusqueda() {
         controlador = Controlador.getInstancia();
         setTitle("Buscar Mensajes");
@@ -28,22 +34,39 @@ public class VentanaBusqueda extends JFrame {
         inicializarInterfaz();
     }
 
+    /**
+     * Inicializa los componentes gráficos de la ventana.
+     */
     private void inicializarInterfaz() {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Theme.COLOR_FONDO);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM, Theme.PADDING_MEDIUM));
         add(mainPanel);
 
-        // Barra superior simplificada con botón de cerrar
+        JPanel headerPanel = crearBarraSuperior();
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        JPanel searchPanel = crearPanelBusqueda();
+        mainPanel.add(searchPanel, BorderLayout.CENTER);
+
+        JScrollPane resultadosScroll = crearPanelResultados();
+        mainPanel.add(resultadosScroll, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Crea la barra superior con el título y el botón de cierre.
+     * @return JPanel con la barra de título.
+     */
+    private JPanel crearBarraSuperior() {
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Theme.COLOR_HEADER);
         headerPanel.setPreferredSize(new Dimension(700, Theme.TITLE_BAR_HEIGHT));
-        
+
         JLabel header = new JLabel("  🔎 Buscador de Mensajes", JLabel.LEFT);
         header.setFont(Theme.FONT_BOLD_MEDIUM);
         header.setForeground(Color.WHITE);
         headerPanel.add(header, BorderLayout.WEST);
-        
+
         JButton closeButton = new JButton("×");
         closeButton.setPreferredSize(new Dimension(45, Theme.TITLE_BAR_HEIGHT));
         closeButton.setFocusPainted(false);
@@ -62,44 +85,41 @@ public class VentanaBusqueda extends JFrame {
             }
         });
         headerPanel.add(closeButton, BorderLayout.EAST);
-        
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Panel de búsqueda
+        return headerPanel;
+    }
+
+    /**
+     * Crea el panel de búsqueda con los campos de texto y el botón de búsqueda.
+     * @return JPanel con los controles de búsqueda.
+     */
+    private JPanel crearPanelBusqueda() {
         JPanel searchPanel = new JPanel(new GridLayout(2, 4, 10, 10));
         searchPanel.setBackground(Theme.COLOR_FONDO);
-        
+
         searchPanel.add(new JLabel("Texto:", JLabel.RIGHT)).setFont(Theme.FONT_BOLD_MEDIUM);
         textSearch = crearCampoTexto();
         searchPanel.add(textSearch);
-        
+
         searchPanel.add(new JLabel("Teléfono:", JLabel.RIGHT)).setFont(Theme.FONT_BOLD_MEDIUM);
         phoneSearch = crearCampoTexto();
         searchPanel.add(phoneSearch);
-        
+
         searchPanel.add(new JLabel("Contacto:", JLabel.RIGHT)).setFont(Theme.FONT_BOLD_MEDIUM);
         contactSearch = crearCampoTexto();
         searchPanel.add(contactSearch);
-        
+
         JButton buscarBtn = crearBotonAccion("Buscar", e -> realizarBusqueda());
         searchPanel.add(new JLabel());
         searchPanel.add(buscarBtn);
 
-        mainPanel.add(searchPanel, BorderLayout.CENTER);
-
-        // Panel de resultados
-        messagesPanel = new JPanel();
-        messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
-        messagesPanel.setBackground(Theme.COLOR_SECUNDARIO);
-
-        JScrollPane scrollPane = new JScrollPane(messagesPanel);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 1));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setPreferredSize(new Dimension(600, 350));
-
-        mainPanel.add(scrollPane, BorderLayout.SOUTH);
+        return searchPanel;
     }
 
+    /**
+     * Crea un campo de texto con estilo.
+     * @return JTextField personalizado.
+     */
     private JTextField crearCampoTexto() {
         JTextField campo = new JTextField();
         campo.setFont(Theme.FONT_PLAIN_MEDIUM);
@@ -111,6 +131,12 @@ public class VentanaBusqueda extends JFrame {
         return campo;
     }
 
+    /**
+     * Crea un botón con estilo y acción asociada.
+     * @param texto Texto del botón.
+     * @param accion Acción al hacer clic.
+     * @return JButton personalizado.
+     */
     private JButton crearBotonAccion(String texto, ActionListener accion) {
         JButton boton = new JButton(texto);
         boton.setFont(Theme.FONT_BOLD_MEDIUM);
@@ -132,6 +158,25 @@ public class VentanaBusqueda extends JFrame {
         return boton;
     }
 
+    /**
+     * Crea el panel que mostrará los resultados de la búsqueda.
+     * @return JScrollPane con los resultados.
+     */
+    private JScrollPane crearPanelResultados() {
+        messagesPanel = new JPanel();
+        messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
+        messagesPanel.setBackground(Theme.COLOR_SECUNDARIO);
+
+        JScrollPane scrollPane = new JScrollPane(messagesPanel);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Theme.COLOR_PRINCIPAL, 1));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setPreferredSize(new Dimension(600, 350));
+        return scrollPane;
+    }
+
+    /**
+     * Realiza la búsqueda de mensajes según los criterios introducidos.
+     */
     private void realizarBusqueda() {
         String texto = textSearch.getText().trim();
         String telefono = phoneSearch.getText().trim();
@@ -141,6 +186,10 @@ public class VentanaBusqueda extends JFrame {
         mostrarResultados(resultados);
     }
 
+    /**
+     * Muestra los mensajes encontrados en el panel de resultados.
+     * @param resultados Lista de mensajes encontrados.
+     */
     private void mostrarResultados(List<Mensaje> resultados) {
         messagesPanel.removeAll();
         if (resultados.isEmpty()) {
