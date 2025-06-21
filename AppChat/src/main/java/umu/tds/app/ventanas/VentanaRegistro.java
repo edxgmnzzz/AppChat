@@ -260,7 +260,7 @@ public class VentanaRegistro extends JFrame {
                 return;
             }
         }
-
+        //para cerrar
         if (controlador.registrarUsuario(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono, rutaFoto, saludo)) {
             JOptionPane.showMessageDialog(this, "Registro exitoso", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
             this.dispose();
