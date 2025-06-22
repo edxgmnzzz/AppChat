@@ -1,50 +1,89 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>AppChat</groupId>
     <artifactId>AppChat</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Dependencia jcalendar -->
+        <!-- JCalendar -->
         <dependency>
             <groupId>com.toedter</groupId>
             <artifactId>jcalendar</artifactId>
             <version>1.4</version>
         </dependency>
 
-       <dependency>
-    <groupId>tds</groupId>
-    <artifactId>chatWindowLib</artifactId>
-    <version>1.1</version>
-</dependency>
-<!-- JTattoo -->
+        <!-- JTattoo -->
         <dependency>
             <groupId>com.jtattoo</groupId>
             <artifactId>JTattoo</artifactId>
             <version>1.6.13</version>
         </dependency>
-        <dependency>
-    <groupId>com.itextpdf</groupId>
-    <artifactId>itextpdf</artifactId>
-    <version>5.5.13.3</version>
-</dependency>
 
-        
+        <!-- iText PDF -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>5.5.13.3</version>
+        </dependency>
+
+        <!-- Chat window (enriquecida) -->
+        <dependency>
+            <groupId>tds</groupId>
+            <artifactId>chatWindowLib</artifactId>
+            <version>1.1</version>
+        </dependency>
+
+        <!-- Driver de persistencia TDS (instalado localmente) -->
+        <dependency>
+            <groupId>umu.tds</groupId>
+            <artifactId>driverPersistencia</artifactId>
+            <version>2.0</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Compilador Java 21 -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
                     <release>21</release>
                 </configuration>
             </plugin>
+
+            <!-- JAR ejecutable con dependencias -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>umu.tds.app.LanzadorAppChat</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
 </project>
