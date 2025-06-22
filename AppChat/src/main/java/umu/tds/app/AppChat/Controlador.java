@@ -118,7 +118,7 @@ public class Controlador {
             florentino.setUrlFoto(path);
             usuarioDAO.registrarUsuario(florentino);
             
-            Usuario laporta = new Usuario("600333444", "Joan Laporta", "pass2", "j@l.com", "Visca Barça", foto, true);
+            Usuario laporta = new Usuario("600333444", "Joan Laporta", "pass2", "j@l.com", "Visca Barça", foto, false);
             usuarioDAO.registrarUsuario(laporta);
             
             Usuario cerezo = new Usuario("600555666", "Enrique Cerezo", "pass3", "e@c.com", "Aupa Atleti", null, true);
@@ -172,7 +172,6 @@ public class Controlador {
 					u.setFoto(loadImageFromUrl(urlFoto));
 				}
 			} catch (Exception e) {
-                // Silently fail if image loading fails, user will have default icon
 			}
             usuariosRegistrados.put(u.getTelefono(), u);
         }
@@ -220,36 +219,47 @@ public class Controlador {
      * Asocia cada mensaje recuperado de la base de datos a su chat correspondiente (contacto o grupo).
      * @param todosLosContactosDelSistema Mapa con todos los contactos y grupos disponibles.
      */
-    private void vincularMensajesAContactos(Map<Integer, Contacto> todosLosContactosDelSistema) {
-        List<Mensaje> mensajes = mensajeDAO.recuperarTodosMensajes();
-        for (Mensaje mensaje : mensajes) {
-            Usuario emisor = usuariosRegistrados.get(mensaje.getEmisor().getTelefono());
-            Contacto contactoDelEmisor = todosLosContactosDelSistema.get(mensaje.getReceptor().getCodigo());
+private void vincularMensajesAContactos(Map<Integer, Contacto> todosLosContactosDelSistema) {
+    List<Mensaje> mensajes = mensajeDAO.recuperarTodosMensajes();
 
-            if (emisor == null || contactoDelEmisor == null) continue;
+    for (Mensaje mensaje : mensajes) {
+        Usuario emisor = usuariosRegistrados.get(mensaje.getEmisor().getTelefono());
+        Contacto receptor = mensaje.getReceptor();
 
-            if (!contactoDelEmisor.getMensajes().contains(mensaje)) {
-                contactoDelEmisor.sendMensaje(mensaje);
-            }
+        if (emisor == null || receptor == null) continue;
 
-            if (contactoDelEmisor instanceof ContactoIndividual ci) {
-                Usuario receptorReal = usuariosRegistrados.get(ci.getTelefono());
-                if (receptorReal != null) {
-                    receptorReal.getContactos().stream()
+        Contacto contactoDesdeEmisor = todosLosContactosDelSistema.get(receptor.getCodigo());
+        if (contactoDesdeEmisor != null && !contactoDesdeEmisor.getMensajes().contains(mensaje)) {
+            contactoDesdeEmisor.sendMensaje(mensaje);
+        }
+
+        if (receptor instanceof ContactoIndividual ci) {
+            Usuario usuarioReceptor = usuariosRegistrados.get(ci.getTelefono());
+            if (usuarioReceptor != null) {
+                Optional<ContactoIndividual> contactoEspejoOpt = usuarioReceptor.getContactos().stream()
                         .filter(c -> c instanceof ContactoIndividual)
                         .map(c -> (ContactoIndividual) c)
                         .filter(c -> c.getTelefono().equals(emisor.getTelefono()))
-                        .findFirst()
-                        .ifPresent(contactoEspejo -> {
-                            if (!contactoEspejo.getMensajes().contains(mensaje)) {
-                                contactoEspejo.sendMensaje(mensaje);
-                            }
-                        });
+                        .findFirst();
+
+                ContactoIndividual contactoEspejo = contactoEspejoOpt.orElseGet(() -> {
+                    ContactoIndividual nuevo = new ContactoIndividual(emisor.getNombre(), emisor.getTelefono());
+                    contactoDAO.registrarContacto(nuevo);
+                    usuarioReceptor.addContacto(nuevo);
+                    usuarioDAO.modificarUsuario(usuarioReceptor);
+                    todosLosContactosDelSistema.put(nuevo.getCodigo(), nuevo);
+                    return nuevo;
+                });
+
+
+                if (!contactoEspejo.getMensajes().contains(mensaje)) {
+                    contactoEspejo.sendMensaje(mensaje);
                 }
             }
         }
     }
-    
+}
+
     /**
      * Notifica a todos los observers registrados sobre el estado actual de la aplicación.
      * Este método es llamado típicamente después de iniciar sesión para cargar la interfaz
@@ -316,7 +326,6 @@ public class Controlador {
     public boolean registrarUsuario(String nombreReal, String nombreUsuario, String password, String confirmarPassword, String email, String telefono, String rutaFoto, String saludo) {
     	String error = validateRegistration(nombreReal, nombreUsuario, password, confirmarPassword, email, telefono);
 		if (error != null) {
-			JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		ImageIcon profileIcon = loadImageFromUrl(rutaFoto);
@@ -395,7 +404,6 @@ public class Controlador {
 				return new ImageIcon(scaledImage);
 			}
 		} catch (Exception e) {
-            // Falla silenciosamente y devuelve un icono vacío
 		}
 		return new ImageIcon();
 	}
@@ -414,11 +422,9 @@ public class Controlador {
     public boolean agregarContacto(String nombre, String telefono) {
         if (usuarioActual == null || nombre.isBlank() || telefono.isBlank()) return false;
         if (!usuariosRegistrados.containsKey(telefono)) {
-            JOptionPane.showMessageDialog(null, "No existe ningún usuario con ese teléfono.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         if (existeContacto(nombre) || existeContactoConTelefono(telefono)) {
-            JOptionPane.showMessageDialog(null, "Ya tienes un contacto con ese nombre o teléfono.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         ContactoIndividual nuevoContacto = new ContactoIndividual(nombre, telefono);
@@ -457,31 +463,51 @@ public class Controlador {
      * @param nuevoNombre El nombre que el usuario desea asignar a este contacto.
      * @return {@code true} si el proceso es exitoso, {@code false} en caso contrario.
      */
-    public boolean registrarContactoDesconocido(ContactoIndividual contactoDesconocido, String nuevoNombre) {
-        if (usuarioActual == null || !contactoDesconocido.isDesconocido() || nuevoNombre.isBlank()) return false;
-        if (existeContacto(nuevoNombre)) {
-            JOptionPane.showMessageDialog(null, "Ya existe un contacto con el nombre '" + nuevoNombre + "'.", "Nombre duplicado", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        
-        int idAntiguo = contactoDesconocido.getCodigo();
+public boolean registrarContactoDesconocido(ContactoIndividual contactoDesconocido, String nuevoNombre) {
+    if (usuarioActual == null || !contactoDesconocido.isDesconocido() || nuevoNombre.isBlank()) return false;
 
-        contactoDesconocido.registrarComoConocido(nuevoNombre);
-        contactoDAO.modificarContacto(contactoDesconocido);
-        
-        int idNuevo = contactoDesconocido.getCodigo();
+    if (existeContacto(nuevoNombre)) {
 
-        if (usuarioActual.removeContactoID(idAntiguo)) {
-            usuarioActual.addContactoID(idNuevo);
-            usuarioDAO.modificarUsuario(usuarioActual);
-        }
-        
-        notifyObserversListaContactos();
-        notifyObserversChatsRecientes();
-        notifyObserversContactoActual(contactoDesconocido);
-        return true;
+        return false;
     }
+
+    System.out.println("📥 [DEBUG] Antes de registrar contacto conocido:");
+    mostrarMensajesDeContacto(contactoDesconocido);
+
+    contactoDesconocido.registrarComoConocido(nuevoNombre);
+    contactoDAO.modificarContacto(contactoDesconocido);
+
+    usuarioActual.addContacto(contactoDesconocido);
+    usuarioDAO.modificarUsuario(usuarioActual);
     
+
+    System.out.println("📤 [DEBUG] Después de registrar contacto conocido:");
+    mostrarMensajesDeContacto(contactoDesconocido);
+
+    notifyObserversListaContactos();
+    notifyObserversChatsRecientes();
+    notifyObserversContactoActual(contactoDesconocido);
+    
+    return true;
+}
+private void mostrarMensajesDeContacto(Contacto contacto) {
+    if (contacto == null) {
+        System.out.println("   → Contacto es null");
+        return;
+    }
+    List<Mensaje> mensajes = contacto.getMensajes();
+    System.out.println("   → Contacto: " + contacto.getNombre() + " (ID=" + contacto.getCodigo() + ")");
+    System.out.println("   → Tiene " + mensajes.size() + " mensaje(s):");
+    for (Mensaje m : mensajes.stream().sorted().toList()) {
+        String texto = m.getTexto();
+        String hora = m.getHora().toString();
+        String emisor = (m.getEmisor() != null) ? m.getEmisor().getNombre() : "null";
+        String receptor = (m.getReceptor() != null) ? m.getReceptor().getNombre() : "null";
+        System.out.println("      [" + hora + "] " + emisor + " → " + receptor + ": " + texto);
+    }
+}
+
+
     /**
      * Crea un nuevo grupo, lo persiste y lo añade a la lista de contactos del usuario actual.
      * @param nombre El nombre del grupo.
@@ -508,34 +534,17 @@ public class Controlador {
     public boolean añadirContactoAGrupo(Grupo grupo, ContactoIndividual nuevoMiembro) {
         if (grupo == null || nuevoMiembro == null) return false;
 
-        // Si ya es miembro, no se añade
         if (grupo.getParticipantes().contains(nuevoMiembro)) return false;
 
         grupo.addIntegrante(nuevoMiembro);
-        grupoDAO.modificarGrupo(grupo); // Persistimos el cambio
-        notifyObserversListaContactos(); // Si quieres refrescar
-        notifyObserversContactoActual(grupo); // Si es el contacto actual
+        grupoDAO.modificarGrupo(grupo); 
+        notifyObserversListaContactos();
+        notifyObserversContactoActual(grupo); 
 
         return true;
     }
 
     
-    /**
-     * Elimina un contacto individual de la lista del usuario actual.
-     * @param contacto El contacto a eliminar.
-     */
-    public void eliminarContacto(ContactoIndividual contacto) {
-    	if (usuarioActual == null || contacto == null)
-			return;
-		if (usuarioActual.removeContacto(contacto)) {
-			usuarioDAO.modificarUsuario(usuarioActual);
-			notifyObserversListaContactos();
-			if (contacto.equals(contactoActual)) {
-				setContactoActual(null);
-			}
-			notifyObserversChatsRecientes();
-		}
-    }
     
     /**
      * Persiste los cambios realizados en un objeto Grupo (p. ej., añadir/eliminar miembros).
@@ -630,23 +639,35 @@ public class Controlador {
     // ########################################################################
     
     /**
-     * Inicia el proceso para que el usuario actual se convierta en Premium.
-     * Calcula los descuentos aplicables y, si el usuario acepta, actualiza su estado.
+     * CALCULA y DEVUELVE el resumen de los descuentos para la activación Premium.
+     * NO muestra ninguna ventana. Solo devuelve los datos para que la Vista los use.
+     *
+     * @return Un String con el texto del resumen de descuentos, o null si no hay usuario.
      */
-    public void activarPremiumConDescuento() {
-    	if (usuarioActual == null)
-			return;
-		double precioBase = 100.0;
-		CalculadoraDescuentos calculadora = new CalculadoraDescuentos(usuarioActual, this);
-		String resultado = calculadora.calcularDescuentos(precioBase);
-		if (JOptionPane.showConfirmDialog(null, resultado + "\n¿Desea activar Premium?", "Resumen de descuentos",
-				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-			usuarioActual.setPremium(true);
-			usuarioDAO.modificarUsuario(usuarioActual);
-			JOptionPane.showMessageDialog(null, "¡Felicidades! Ya eres usuario Premium.");
-		}
+    public String getResumenDescuentoPremium() {
+        if (usuarioActual == null) {
+            return null;
+        }
+        double precioBase = 100.0;
+        CalculadoraDescuentos calculadora = new CalculadoraDescuentos(usuarioActual, this);
+        return calculadora.calcularDescuentos(precioBase);
     }
 
+    /**
+     * EJECUTA la acción de convertir al usuario actual en Premium.
+     * Este método asume que el usuario ya ha dado su consentimiento en la Vista.
+     */
+    public void confirmarActivacionPremium() {
+        if (usuarioActual == null || usuarioActual.isPremium()) {
+            return; // No hacer nada si no hay usuario o si ya es premium
+        }
+        usuarioActual.setPremium(true);
+        usuarioDAO.modificarUsuario(usuarioActual);
+        
+        // Opcional: Notificar a los observers si la interfaz debe cambiar al hacerse premium
+        // Por ejemplo, para activar/desactivar botones.
+        // notifyObserversPremiumStatusChanged(); 
+    }
     /**
      * Exporta un informe en PDF con la agenda completa del usuario y el historial detallado
      * de un chat específico. Esta función solo está disponible para usuarios Premium.
@@ -656,7 +677,6 @@ public class Controlador {
      */
     public boolean exportarPdfConDatos(String rutaDestino, ContactoIndividual contactoADetallar) {
         if (usuarioActual == null || !usuarioActual.isPremium()) {
-            JOptionPane.showMessageDialog(null, "Solo los usuarios Premium pueden exportar.", "Acceso Denegado", JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
@@ -741,7 +761,6 @@ public class Controlador {
             document.add(tablaChat);
             document.close();
 
-            JOptionPane.showMessageDialog(null, "El informe PDF ha sido guardado con éxito.", "Exportación Completa", JOptionPane.INFORMATION_MESSAGE);
             return true;
         } catch (DocumentException | IOException e) {
             e.printStackTrace();
@@ -917,9 +936,7 @@ public class Controlador {
 
         Usuario usuarioDestino = buscarUsuarioPorTelefono(telefono);
         if (usuarioDestino == null) {
-            JOptionPane.showMessageDialog(null,
-                    "No existe ningún usuario con el teléfono " + telefono,
-                    "Usuario no encontrado", JOptionPane.WARNING_MESSAGE);
+
             return null;
         }
 

@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import tds.BubbleText;
@@ -46,7 +47,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         crearPanelMensajes(panelInterno);
         crearPanelInferior(panelInterno);
 
-        updateContactoActual(controlador.getContactoActual());
+        //updateContactoActual(controlador.getContactoActual());
     }
 
     /**
@@ -185,6 +186,7 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
         chatPanel.removeAll();
 
         if (contactoActual != null) {
+            // Obtenemos la lista de mensajes del contacto actual, ya ordenada.
             List<Mensaje> mensajes = controlador.getMensajes(contactoActual);
 
             if (mensajes.isEmpty()) {
@@ -195,26 +197,50 @@ public class VentanaChatActual extends JPanel implements ObserverChats {
                 chatPanel.add(Box.createVerticalStrut(20));
                 chatPanel.add(vacio);
             } else {
+
                 for (Mensaje msg : mensajes) {
                     boolean enviadoPorMi = msg.getEmisor().equals(controlador.getUsuarioActual());
-                    String nombreEmisor = enviadoPorMi ? "Tú" : msg.getEmisor().getNombre();
-                    if (!enviadoPorMi && contactoActual instanceof Grupo) {
-                        nombreEmisor += " (" + contactoActual.getNombre() + ")";
+                    
+                    // --- Lógica para obtener el nombre del emisor ---
+                    String nombreEmisor;
+                    if (enviadoPorMi) {
+                        nombreEmisor = "Tú";
+                    } else {
+                        // Si el mensaje es recibido, buscamos cómo el usuario actual ve a este contacto.
+                        // El `contactoActual` ya es la representación local de ese contacto.
+                        
+                        if (contactoActual instanceof ContactoIndividual) {
+                            ContactoIndividual contactoIndividual = (ContactoIndividual) contactoActual;
+                            // Si es desconocido, usamos su teléfono. Si no, su nombre (el alias local).
+                            nombreEmisor = contactoIndividual.isDesconocido() 
+                                         ? contactoIndividual.getTelefono() 
+                                         : contactoIndividual.getNombre();
+                        } else {
+                            // Para grupos u otros tipos, usamos el nombre del contacto actual (el nombre del grupo).
+                            // Y dentro del grupo, usamos el nombre real del emisor.
+                            nombreEmisor = msg.getEmisor().getNombre() + " (" + contactoActual.getNombre() + ")";
+                        }
                     }
-                    addMessageBubble(msg.getTexto(),
-                                     enviadoPorMi ? Theme.COLOR_BUBBLE_SENT : Theme.COLOR_BUBBLE_RECEIVED,
-                                     nombreEmisor,
-                                     enviadoPorMi ? BubbleText.SENT : BubbleText.RECEIVED);
+                   
+                    String horaFormateada = msg.getHora().format(DateTimeFormatter.ofPattern("HH:mm"));
+                    String textoConHora = msg.getTexto() + "\n\n" + horaFormateada;
+                    
+                    // Añadimos la burbuja de mensaje con la información correcta.
+                    addMessageBubble(
+                    	msg.getTexto(), // Usamos el texto con HTML para la hora
+                        enviadoPorMi ? Theme.COLOR_BUBBLE_SENT : Theme.COLOR_BUBBLE_RECEIVED, 
+                        nombreEmisor, // Usamos el nombre que acabamos de calcular
+                        enviadoPorMi ? BubbleText.SENT : BubbleText.RECEIVED
+                    );
                 }
-                chatPanel.add(Box.createVerticalStrut(10));
+                chatPanel.add(Box.createVerticalStrut(10)); // pequeño espacio final
             }
         }
-
+        
         chatPanel.revalidate();
         chatPanel.repaint();
         scrollToBottom();
     }
-
     /**
      * Agrega el contacto desconocido a la lista de contactos conocidos.
      */

@@ -57,10 +57,9 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
      */
     @Override
     public ContactoIndividual registrarContacto(ContactoIndividual contacto) {
-        if (contacto == null) {
-            LOGGER.warning("Intento de registrar un contacto nulo.");
-            return null;
-        }
+    	//LOGGER.info("--- REGISTRANDO NUEVO CONTACTO ---");
+        //LOGGER.info("Recibido para registrar: " + contacto.toString());
+ 
 
         if (contacto.getCodigo() > 0 && sp.recuperarEntidad(contacto.getCodigo()) != null) {
             // Ya existía en la BD; no se hace nada.
@@ -79,6 +78,8 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
 
         eContacto = sp.registrarEntidad(eContacto);
         contacto.setCodigo(eContacto.getId());
+        //LOGGER.info("Registrado en BD con ID: " + contacto.getCodigo() + ". Objeto final: " + contacto.toString());
+
         PoolDAO.getInstancia().addObjeto(contacto.getCodigo(), contacto);
         return contacto;
     }
@@ -92,34 +93,56 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
      * @param codigo ID del contacto.
      * @return Contacto reconstruido o {@code null} si no existe.
      */
+ // En AdaptadorContactoIndividualTDS.java
+
     @Override
     public ContactoIndividual recuperarContacto(int codigo) {
-        // 1. Intentar cache
+    	 //LOGGER.info("--- RECUPERANDO CONTACTO DE BD ---");
+         //LOGGER.info("Solicitado ID: " + codigo);
+        // 1. Intentar cache (esto está bien)
         if (PoolDAO.getInstancia().contiene(codigo)) {
+            //LOGGER.info("-> Encontrado en CACHÉ (PoolDAO). Devolviendo instancia existente.");
+
             return (ContactoIndividual) PoolDAO.getInstancia().getObjeto(codigo);
         }
 
-        // 2. Ir a la BD
+        // 2. Ir a la BD (esto está bien)
         Entidad e = sp.recuperarEntidad(codigo);
         if (e == null) {
             LOGGER.warning("No se encontró la entidad contactoIndividual con ID=" + codigo);
             return null;
         }
+        //LOGGER.info("-> Entidad encontrada en BD. Reconstruyendo objeto...");
 
         String nombre = sp.recuperarPropiedadEntidad(e, "nombre");
+        //LOGGER.info("  -> Propiedad leída [nombre]: " + nombre);
+        
         String telefono = sp.recuperarPropiedadEntidad(e, "telefono");
-        boolean esDesconocido = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "esDesconocido"));
+        //LOGGER.info("  -> Propiedad leída [telefono]: " + telefono);
+        
+        String esDesconocidoStr = sp.recuperarPropiedadEntidad(e, "esDesconocido");
+        //LOGGER.info("  -> Propiedad leída [esDesconocido]: " + esDesconocidoStr);
+        boolean esDesconocido = Boolean.parseBoolean(esDesconocidoStr);
 
-        ContactoIndividual contacto = esDesconocido ? new ContactoIndividual(telefono) : new ContactoIndividual(nombre, telefono);
-        if (esDesconocido) contacto.setNombre(nombre); // pudo ser renombrado
+        // Usamos una lógica de reconstrucción simple y robusta
+        ContactoIndividual contacto;
+        if (esDesconocido) {
+            contacto = new ContactoIndividual(telefono);
+        } else {
+            contacto = new ContactoIndividual(nombre, telefono);
+        }
         contacto.setCodigo(codigo);
+        
+        //LOGGER.info("-> Objeto RECONSTRUIDO: " + contacto.toString());
+
         PoolDAO.getInstancia().addObjeto(codigo, contacto);
 
-        // Vincular mensajes
+        // 7. Vincular mensajes (esto está bien)
         String codigosMsg = sp.recuperarPropiedadEntidad(e, "mensajes");
         if (codigosMsg != null && !codigosMsg.isBlank()) {
             obtenerMensajesDesdeCodigos(codigosMsg).forEach(contacto::sendMensaje);
         }
+        
         return contacto;
     }
 
@@ -133,33 +156,31 @@ public class AdaptadorContactoIndividualTDS implements ContactoIndividualDAO {
      * @param contacto Contacto a modificar.
      */
     @Override
+   
     public void modificarContacto(ContactoIndividual contacto) {
-        Entidad eAntigua = sp.recuperarEntidad(contacto.getCodigo());
-        if (eAntigua == null) {
-            LOGGER.warning("Intento de modificar contacto no persistido con ID=" + contacto.getCodigo() + ". Se registra como nuevo.");
-            registrarContacto(contacto);
-            return;
-        }
+        //LOGGER.info("--- MODIFICANDO CONTACTO EN BD (MÉTODO ROBUSTO) ---");
+        //LOGGER.info("Recibido para modificar: " + contacto.toString());
 
-        // 1. Borrar la entidad vieja
-        sp.borrarEntidad(eAntigua);
-
-        // 2. Crear nueva entidad con propiedades actualizadas
+        // 1. Construir una nueva entidad "espejo" con los datos actualizados del contacto.
         Entidad eNueva = new Entidad();
-        eNueva.setNombre(ENTIDAD_CONTACTO);
+        eNueva.setNombre(ENTIDAD_CONTACTO); // ¡Importante! No olvidar el nombre de la entidad.
+        
+        // Asignamos el ID existente para que el sistema sepa qué entidad reemplazar.
+        eNueva.setId(contacto.getCodigo()); 
+
         List<Propiedad> props = new ArrayList<>();
         props.add(new Propiedad("nombre", contacto.getNombre()));
         props.add(new Propiedad("telefono", contacto.getTelefono()));
         props.add(new Propiedad("esDesconocido", String.valueOf(contacto.isDesconocido())));
         props.add(new Propiedad("mensajes", codigosDeMensajes(contacto.getMensajes())));
         eNueva.setPropiedades(props);
-        eNueva = sp.registrarEntidad(eNueva);
 
-        // 3. Sincronizar ID en memoria y en cache
-        PoolDAO pool = PoolDAO.getInstancia();
-        pool.removeObjeto(contacto.getCodigo());
-        contacto.setCodigo(eNueva.getId());
-        pool.addObjeto(contacto.getCodigo(), contacto);
+        // 2. Llamar al método de modificación atómica del servicio de persistencia.
+        // Este método debería reemplazar la entidad antigua por la nueva, manteniendo el ID.
+        //LOGGER.info("Llamando a sp.modificarEntidad con la nueva entidad espejo...");
+        sp.modificarEntidad(eNueva);
+        
+        //LOGGER.info("--- MODIFICACIÓN EN BD COMPLETA (MÉTODO ROBUSTO) ---");
     }
 
     // ─────────────────────────── Listado y borrado ───────────────────────────

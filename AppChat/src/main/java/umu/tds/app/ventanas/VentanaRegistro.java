@@ -81,7 +81,10 @@ public class VentanaRegistro extends JFrame {
         botonesControl.setOpaque(false);
         botonesControl.add(crearBotonControl("−", e -> setState(Frame.ICONIFIED)));
         botonesControl.add(crearBotonControl("□", e -> setExtendedState(getExtendedState() == JFrame.MAXIMIZED_BOTH ? JFrame.NORMAL : JFrame.MAXIMIZED_BOTH)));
-        botonesControl.add(crearBotonControl("×", e -> System.exit(0)));
+        botonesControl.add(crearBotonControl("×", e -> {
+            this.dispose();
+            new VentanaLogin().setVisible(true);
+        }));
         barraTitulo.add(botonesControl, BorderLayout.EAST);
 
         barraTitulo.addMouseListener(new MouseAdapter() {

@@ -128,13 +128,36 @@ public class VentanaSuperior extends JPanel implements ObserverChats, ObserverCo
         return new ImageIcon(scaledImage);
     }
 
-    private void mostrarDialogoPremium() {
-        if (controlador.isPremiumUserActual()) {
-            JOptionPane.showMessageDialog(this, "\u00a1Ya eres un usuario Premium!", "Información", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            controlador.activarPremiumConDescuento();
-        }
+
+private void mostrarDialogoPremium() {
+    if (controlador.isPremiumUserActual()) {
+        JOptionPane.showMessageDialog(this, 
+            "¡Ya eres un usuario Premium!", 
+            "Información", 
+            JOptionPane.INFORMATION_MESSAGE);
+        return;
     }
+    
+    String resumen = controlador.getResumenDescuentoPremium();
+    if (resumen == null) return;
+
+    int decision = JOptionPane.showConfirmDialog(
+        this, 
+        resumen + "\n\n¿Desea activar Premium?", 
+        "Resumen de descuentos",
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.QUESTION_MESSAGE
+    );
+
+    if (decision == JOptionPane.YES_OPTION) {
+        controlador.confirmarActivacionPremium();
+        
+        JOptionPane.showMessageDialog(this, 
+            "¡Felicidades! Ya eres usuario Premium.", 
+            "Activación Completada", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+}
 
     private void cerrarSesion() {
         controlador.cerrarSesion();

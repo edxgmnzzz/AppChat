@@ -93,35 +93,51 @@ public class AdaptadorMensajeTDS implements MensajeDAO {
         }
 
         try {
-            String texto      = sp.recuperarPropiedadEntidad(e, "texto");
-            String horaTexto  = sp.recuperarPropiedadEntidad(e, "hora");
+            String texto     = sp.recuperarPropiedadEntidad(e, "texto");
+            String horaTexto = sp.recuperarPropiedadEntidad(e, "hora");
             if (horaTexto == null || horaTexto.isBlank()) {
                 LOGGER.severe("Mensaje ID " + codigo + " sin fecha válida");
                 return null;
             }
             LocalDateTime hora = LocalDateTime.parse(horaTexto);
-
             Mensaje mensaje = new Mensaje(texto, hora, null, null);
             mensaje.setCodigo(codigo);
             PoolDAO.getInstancia().addObjeto(codigo, mensaje);
 
-            int idEmisor      = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "emisor"));
-            int idReceptor    = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "receptor"));
-            boolean esGrupo   = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "grupo"));
+            int idEmisor    = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "emisor"));
+            int idReceptor  = Integer.parseInt(sp.recuperarPropiedadEntidad(e, "receptor"));
+            boolean esGrupo = Boolean.parseBoolean(sp.recuperarPropiedadEntidad(e, "grupo"));
 
+            // Emisor
             Usuario emisor = AdaptadorUsuarioTDS.getInstancia().recuperarUsuario(idEmisor);
-            Contacto receptor = esGrupo
-                    ? AdaptadorGrupoTDS.getInstancia().recuperarGrupo(idReceptor)
-                    : AdaptadorContactoIndividualTDS.getInstancia().recuperarContacto(idReceptor);
+            if (emisor == null) {
+                LOGGER.warning("Emisor no encontrado para mensaje ID " + codigo + ". Creando emisor temporal.");
+                emisor = new Usuario("000000000", "Desconocido", "", "", "", null, false);
+                emisor.setId(idEmisor);
+            }
 
-            if (emisor == null || receptor == null) {
-                LOGGER.warning("Emisor o receptor nulo al recuperar mensaje ID " + codigo);
-                return null;
+            // Receptor
+            Contacto receptor = null;
+            if (esGrupo) {
+                receptor = AdaptadorGrupoTDS.getInstancia().recuperarGrupo(idReceptor);
+                if (receptor == null) {
+                    LOGGER.warning("Grupo receptor no encontrado para mensaje ID " + codigo);
+                    return null; // no se puede reconstruir grupo
+                }
+            } else {
+                receptor = AdaptadorContactoIndividualTDS.getInstancia().recuperarContacto(idReceptor);
+                if (receptor == null) {
+                    LOGGER.warning("Contacto receptor no encontrado en BD para mensaje ID " + codigo + ". Creando temporal.");
+                    ContactoIndividual desconocido = new ContactoIndividual("Desconocido", "000000000");
+                    desconocido.setCodigo(idReceptor);
+                    receptor = desconocido;
+                }
             }
 
             mensaje.setEmisor(emisor);
             mensaje.setReceptor(receptor);
             return mensaje;
+
         } catch (Exception ex) {
             LOGGER.severe("Error al recuperar mensaje ID " + codigo + ": " + ex.getMessage());
             return null;

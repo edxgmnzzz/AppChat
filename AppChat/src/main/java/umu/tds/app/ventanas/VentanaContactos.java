@@ -122,7 +122,6 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         botonesPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
 
         botonesPanel.add(createStyledButton("Agregar Contacto", e -> agregarContacto()));
-        botonesPanel.add(createStyledButton("Eliminar Contacto", e -> eliminarContacto()));
         botonesPanel.add(createStyledButton("Crear Grupo", e -> new VentanaNuevoGrupo().setVisible(true)));
         botonesPanel.add(createStyledButton("Añadir a Grupo", e -> añadirContactoAGrupo()));
 
@@ -162,31 +161,6 @@ public class VentanaContactos extends JDialog implements ObserverContactos {
         }
     }
 
-    private void eliminarContacto() {
-        String seleccionado = contactosList.getSelectedValue();
-        if (seleccionado == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un contacto para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String nombre = seleccionado.substring(seleccionado.indexOf(":") + 2);
-        int confirmacion = JOptionPane.showConfirmDialog(
-            this,
-            "¿Estás seguro de que quieres eliminar a '" + nombre + "'?",
-            "Confirmar Eliminación",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
-        );
-
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            Contacto contacto = controlador.obtenerContactoPorNombre(nombre);
-            if (contacto instanceof ContactoIndividual) {
-                controlador.eliminarContacto((ContactoIndividual) contacto);
-            } else {
-                JOptionPane.showMessageDialog(this, "La eliminación de grupos no está implementada.", "Aviso", JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
-    }
 
     private void añadirContactoAGrupo() {
         String seleccionado = contactosList.getSelectedValue();
