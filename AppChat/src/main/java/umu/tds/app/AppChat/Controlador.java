@@ -500,6 +500,27 @@ public class Controlador {
     }
     
     /**
+     * Añade un contacto a un grupo ya existente
+     * @param grupo El nombre del grupo
+     * @param nuevoMiembro El contacto a añadir
+     * @return
+     */
+    public boolean añadirContactoAGrupo(Grupo grupo, ContactoIndividual nuevoMiembro) {
+        if (grupo == null || nuevoMiembro == null) return false;
+
+        // Si ya es miembro, no se añade
+        if (grupo.getParticipantes().contains(nuevoMiembro)) return false;
+
+        grupo.addIntegrante(nuevoMiembro);
+        grupoDAO.modificarGrupo(grupo); // Persistimos el cambio
+        notifyObserversListaContactos(); // Si quieres refrescar
+        notifyObserversContactoActual(grupo); // Si es el contacto actual
+
+        return true;
+    }
+
+    
+    /**
      * Elimina un contacto individual de la lista del usuario actual.
      * @param contacto El contacto a eliminar.
      */
