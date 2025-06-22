@@ -83,7 +83,7 @@ public class Controlador {
      */
     private void initialize() {
         initializeDaosAndCollections();
-        realizarSimulacionInicialSiEsNecesario();
+        //realizarSimulacionInicialSiEsNecesario();
         cargarDatosDesdePersistencia();
         notifyObserversContactoActual(this.contactoActual);
     }
@@ -106,7 +106,7 @@ public class Controlador {
      * Comprueba si la base de datos está vacía. Si es así, crea y persiste un conjunto
      * inicial de usuarios para permitir el funcionamiento de la aplicación desde el primer uso.
      */
-    private void realizarSimulacionInicialSiEsNecesario() {
+   private void realizarSimulacionInicialSiEsNecesario() {
         if (!usuarioDAO.recuperarTodosUsuarios().isEmpty()) {
             return;
         }
@@ -664,9 +664,7 @@ private void mostrarMensajesDeContacto(Contacto contacto) {
         usuarioActual.setPremium(true);
         usuarioDAO.modificarUsuario(usuarioActual);
         
-        // Opcional: Notificar a los observers si la interfaz debe cambiar al hacerse premium
-        // Por ejemplo, para activar/desactivar botones.
-        // notifyObserversPremiumStatusChanged(); 
+
     }
     /**
      * Exporta un informe en PDF con la agenda completa del usuario y el historial detallado
@@ -692,7 +690,6 @@ private void mostrarMensajesDeContacto(Contacto contacto) {
             Font fontMensajePropio = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, BaseColor.BLUE);
             Font fontMensajeAjeno = FontFactory.getFont(FontFactory.HELVETICA, 9, BaseColor.BLACK);
 
-            // SECCIÓN 1: AGENDA
             Paragraph titulo = new Paragraph("Informe de Usuario y Agenda", fontTitulo);
             titulo.setAlignment(Element.ALIGN_CENTER);
             titulo.setSpacingAfter(20);
@@ -731,7 +728,6 @@ private void mostrarMensajesDeContacto(Contacto contacto) {
                 }
             }
 
-            // SECCIÓN 2: CHAT DETALLADO
             document.newPage();
             Paragraph chatTitulo = new Paragraph("Historial de Chat Detallado", fontTitulo);
             chatTitulo.setAlignment(Element.ALIGN_CENTER);
